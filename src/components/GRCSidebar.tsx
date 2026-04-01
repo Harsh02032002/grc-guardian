@@ -11,6 +11,7 @@ import {
   BarChart3,
   ChevronDown,
   ChevronRight,
+  Wrench,
 } from "lucide-react";
 
 interface SubItem {
@@ -28,13 +29,26 @@ interface MenuItem {
 const menuItems: MenuItem[] = [
   { title: "Dashboard", icon: LayoutDashboard, url: "/" },
   {
+    title: "Configuration",
+    icon: Wrench,
+    subItems: [
+      { title: "Asset Categories", url: "/config/asset-categories" },
+      { title: "Asset Classification", url: "/config/asset-classification" },
+      { title: "Retention Period", url: "/config/retention-period" },
+      { title: "Department", url: "/config/department" },
+      { title: "Asset ID Format", url: "/config/asset-id-format" },
+      { title: "Asset Type", url: "/config/asset-type" },
+      { title: "Location", url: "/config/location" },
+      { title: "Business Impact Guidelines", url: "/config/impact" },
+      { title: "CIA Matrix Configuration", url: "/config/cia-matrix" },
+    ],
+  },
+  {
     title: "Asset Management",
     icon: Box,
     subItems: [
       { title: "Asset Register", url: "/assets" },
       { title: "Add Asset", url: "/assets/add" },
-      { title: "Asset Categories", url: "/assets/categories" },
-      { title: "Asset Classification (CIA)", url: "/assets/classification" },
     ],
   },
   {
@@ -64,20 +78,13 @@ const menuItems: MenuItem[] = [
       { title: "Add Treatment Plan", url: "/treatments/add" },
     ],
   },
-  {
-    title: "Configuration",
-    icon: Settings,
-    subItems: [
-      { title: "Business Impact Guidelines", url: "/config/impact" },
-      { title: "CIA Matrix Configuration", url: "/config/cia-matrix" },
-    ],
-  },
   { title: "Audit & Version Control", icon: ClipboardCheck, url: "/audit" },
   { title: "Reports & Analytics", icon: BarChart3, url: "/reports" },
 ];
 
 export function GRCSidebar() {
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
+    "Configuration": true,
     "Asset Management": true,
     "Risk Management": true,
   });

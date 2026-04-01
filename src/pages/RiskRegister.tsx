@@ -8,6 +8,8 @@ const getRIRColor = (rir: number) => {
 };
 
 export default function RiskRegister() {
+  const today = new Date().toISOString().split("T")[0];
+
   return (
     <div className="page-container">
       <div className="flex items-center justify-between">
@@ -24,35 +26,73 @@ export default function RiskRegister() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>ID</th>
+              <th>Date</th>
+              <th>S.No.</th>
+              <th>Control Ref</th>
+              <th>Risk ID</th>
               <th>Risk Name</th>
               <th>Category</th>
               <th>Subcategory</th>
               <th>Asset</th>
+              <th>Asset Type</th>
+              <th>C</th>
+              <th>I</th>
+              <th>A</th>
+              <th>AV</th>
               <th>Threat</th>
-              <th>Vulnerability</th>
-              <th>Likelihood</th>
-              <th>Impact</th>
-              <th>RIR</th>
+              <th>T-Val</th>
+              <th>Vuln</th>
+              <th>V-Val</th>
+              <th>TV</th>
+              <th>TVP</th>
+              <th>PoA</th>
+              <th>Abs RIR</th>
+              <th>PC CV</th>
+              <th>PC CR</th>
+              <th>CC CV</th>
+              <th>CC CR</th>
+              <th>RRIR</th>
+              <th>Priority</th>
               <th>Owner</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {risks.map((r) => (
+            {risks.map((r, idx) => (
               <tr key={r.id}>
+                <td className="text-xs whitespace-nowrap">{today}</td>
+                <td className="font-mono text-xs">{idx + 1}</td>
+                <td className="font-mono text-xs">A5.30</td>
                 <td className="font-mono text-xs">{r.id}</td>
-                <td className="font-medium">{r.name}</td>
-                <td>{r.category}</td>
-                <td>{r.subcategory}</td>
-                <td>{r.asset}</td>
+                <td className="font-medium text-xs">{r.name}</td>
+                <td className="text-xs">{r.category}</td>
+                <td className="text-xs">{r.subcategory}</td>
+                <td className="text-xs">{r.asset}</td>
+                <td className="text-xs">Tangible</td>
+                <td className="text-xs">3</td>
+                <td className="text-xs">3</td>
+                <td className="text-xs">3</td>
+                <td className="text-xs font-semibold">3</td>
                 <td className="text-xs">{r.threat}</td>
+                <td className="text-xs">{r.likelihood}</td>
                 <td className="text-xs">{r.vulnerability}</td>
-                <td className="text-center">{r.likelihood}</td>
-                <td className="text-center">{r.impact}</td>
-                <td><span className={`status-badge ${getRIRColor(r.rir)}`}>{r.rir}</span></td>
-                <td>{r.owner}</td>
+                <td className="text-xs">{r.impact}</td>
+                <td className="text-xs">{r.likelihood + r.impact}</td>
+                <td className="text-xs">2</td>
+                <td className="text-xs">2</td>
+                <td className="text-xs"><span className={`status-badge ${getRIRColor(r.rir)}`}>{r.rir}</span></td>
+                <td className="text-xs">4</td>
+                <td className="text-xs">B</td>
+                <td className="text-xs">2</td>
+                <td className="text-xs">D</td>
+                <td><span className={`status-badge ${getRIRColor(Math.round(r.rir / 2))}`}>{Math.round(r.rir / 2)}</span></td>
+                <td>
+                  <span className={`status-badge ${r.rir >= 16 ? "status-inactive" : r.rir >= 9 ? "status-pending" : "status-active"}`}>
+                    {r.rir >= 16 ? "Critical" : r.rir >= 9 ? "High" : r.rir >= 4 ? "Medium" : "Low"}
+                  </span>
+                </td>
+                <td className="text-xs">{r.owner}</td>
                 <td>
                   <span className={`status-badge ${r.status === "Open" ? "status-inactive" : r.status === "Mitigating" ? "status-pending" : "status-active"}`}>
                     {r.status}
