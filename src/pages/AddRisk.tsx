@@ -1,18 +1,25 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { assets, riskCategories } from "@/data/mockData";
-import { masterAssetTypes, masterRiskOwners } from "@/data/masterData";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertCircle } from "lucide-react";
-import { useCreateRisk } from "@/hooks/useApi";
+import { useCreateRisk, useAssets, useConfig, useCreateConfig } from "@/hooks/useApi";
 import { toast } from "@/hooks/use-toast";
 
 export default function AddRisk() {
   const navigate = useNavigate();
   const createRisk = useCreateRisk();
+  const createConfig = useCreateConfig();
+
+  // Fetch from API
+  const { data: apiAssets = [] } = useAssets();
+  const { data: apiCategories = [] } = useConfig("risk_category");
+  const { data: apiSubcategories = [] } = useConfig("risk_subcategory");
+  const { data: apiRiskOwners = [] } = useConfig("risk_owner");
+  const { data: apiAssetTypes = [] } = useConfig("asset_type");
 
   // System Generated
   const today = new Date().toISOString().split("T")[0];
@@ -26,11 +33,15 @@ export default function AddRisk() {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [subcategory, setSubcategory] = useState("");
-  const [showCategoryAdd, setShowCategoryAdd] = useState(false);
-  const [showSubCategoryAdd, setShowSubCategoryAdd] = useState(false);
-  const [newCategory, setNewCategory] = useState("");
-  const [newSubCategory, setNewSubCategory] = useState("");
-  const [customCategories, setCustomCategories] = useState<{ name: string; subcategories: string[] }[]>([]);
+
+  // Add new category/subcategory modals
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showSubCategoryModal, setShowSubCategoryModal] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatDesc, setNewCatDesc] = useState("");
+  const [newSubName, setNewSubName] = useState("");
+  const [newSubDesc, setNewSubDesc] = useState("");
+  const [newSubParent, setNewSubParent] = useState("");
 
   // Section 2: Asset
   const [selectedAsset, setSelectedAsset] = useState("");
@@ -42,7 +53,7 @@ export default function AddRisk() {
   // Section 4: Impact
   const [impact, setImpact] = useState(1);
 
-  // Section 2 (Threat)
+  // Threat & Vulnerability
   const [threat, setThreat] = useState("");
   const [tValue, setTValue] = useState(1);
   const [vulnerability, setVulnerability] = useState("");
@@ -75,30 +86,25 @@ export default function AddRisk() {
   const [riskNotes, setRiskNotes] = useState("");
 
   // ===== CALCULATIONS =====
-  const allCategories = [...riskCategories, ...customCategories];
-  const subcategories = allCategories.find(c => c.name === category)?.subcategories || [];
-  const asset = assets.find(a => a.name === selectedAsset);
-  const riskOwner = masterRiskOwners.find(o => o.name === selectedRiskOwner);
+  const filteredSubcategories = apiSubcategories.filter((s: any) => s.metadata?.parent === category);
+  const asset = apiAssets.find((a: any) => a.name === selectedAsset || a._id === selectedAsset);
+  const riskOwner = apiRiskOwners.find((o: any) => o.name === selectedRiskOwner);
 
-  // CIA from asset
   const assetC = asset?.c || 0;
   const assetI = asset?.i || 0;
   const assetA = asset?.a || 0;
   const assetScore = assetC + assetI + assetA;
   const assetRanking = assetScore >= 10 ? "Critical" : assetScore >= 7 ? "High" : assetScore >= 4 ? "Medium" : "Low";
-  const av = asset?.value || 1;
+  const av = asset?.value || asset?.assetValue || 1;
 
-  // TV
   const tvValue = tValue + vValue;
   const getTvPair = (tv: number) => tv < 3 ? 1 : tv < 5 ? 2 : tv < 7 ? 3 : 4;
   const tvPair = getTvPair(tvValue);
   const tvPairLabel = tvPair === 1 ? "Low" : tvPair === 2 ? "Medium" : tvPair === 3 ? "High" : "Critical";
 
-  // Absolute RIR
   const absoluteRIR = av * tvPair * probability;
   const rirLabel = absoluteRIR >= 16 ? "Critical" : absoluteRIR >= 9 ? "High" : absoluteRIR >= 4 ? "Medium" : "Low";
 
-  // Control Values
   const cv1 = cn1 * ct1 * cce1;
   const cv2 = cn2 * ct2 * cce2;
   const getCR = (cv: number) => cv < 7 ? 1 : cv < 13 ? 2 : cv < 19 ? 3 : 4;
@@ -106,26 +112,33 @@ export default function AddRisk() {
   const cr2 = getCR(cv2);
   const crLabel = (cr: number) => cr <= 1 ? "D" : cr === 2 ? "C" : cr === 3 ? "B" : "A";
 
-  // Revised RIR = P × I / (PCR + CCP)
   const pcr = cr1;
   const ccp = cr2;
   const revisedRIR = (pcr + ccp) > 0 ? Math.round((probability * impact) / (pcr + ccp) * 100) / 100 : probability * impact;
   const riskPriority = revisedRIR >= 16 ? "Critical" : revisedRIR >= 9 ? "High" : revisedRIR >= 4 ? "Medium" : "Low";
 
-  // Handlers
+  // Add category via API
   const handleAddCategory = () => {
-    if (!newCategory.trim()) return;
-    setCustomCategories([...customCategories, { name: newCategory, subcategories: [] }]);
-    setCategory(newCategory);
-    setNewCategory("");
-    setShowCategoryAdd(false);
+    if (!newCatName.trim()) return;
+    createConfig.mutate({ type: "risk_category", name: newCatName.trim(), description: newCatDesc }, {
+      onSuccess: () => {
+        setCategory(newCatName.trim());
+        setNewCatName(""); setNewCatDesc("");
+        setShowCategoryModal(false);
+      },
+    });
   };
 
+  // Add subcategory via API
   const handleAddSubCategory = () => {
-    if (!newSubCategory.trim() || !category) return;
-    setCustomCategories(prev => prev.map(c => c.name === category ? { ...c, subcategories: [...c.subcategories, newSubCategory] } : c));
-    setNewSubCategory("");
-    setShowSubCategoryAdd(false);
+    if (!newSubName.trim() || !newSubParent) return;
+    createConfig.mutate({ type: "risk_subcategory", name: newSubName.trim(), description: newSubDesc, metadata: { parent: newSubParent } }, {
+      onSuccess: () => {
+        setSubcategory(newSubName.trim());
+        setNewSubName(""); setNewSubDesc(""); setNewSubParent("");
+        setShowSubCategoryModal(false);
+      },
+    });
   };
 
   const handleSave = () => {
@@ -134,37 +147,25 @@ export default function AddRisk() {
       return;
     }
     createRisk.mutate({
-      name: riskName,
-      controlReference,
-      description,
-      category,
-      subcategory,
-      status,
-      assetName: selectedAsset,
-      assetType,
-      c: assetC, i: assetI, a: assetA,
-      assetScore, assetRanking, assetValue: av,
-      threat, tValue, vulnerability, vValue,
-      tvValue, tvPair,
-      probability, impact,
-      absoluteRIR, riskImpactRating: rirLabel,
+      name: riskName, controlReference, description, category, subcategory, status,
+      assetName: selectedAsset, assetType,
+      c: assetC, i: assetI, a: assetA, assetScore, assetRanking, assetValue: av,
+      threat, tValue, vulnerability, vValue, tvValue, tvPair,
+      probability, impact, absoluteRIR, riskImpactRating: rirLabel,
       primaryControl: { existingControls: pc_controls, implementationParameter: pc_param, controlNature: cn1, controlType: ct1, cce: cce1, controlValue: cv1, controlRanking: crLabel(cr1), controlRankingValue: cr1 },
       compensatoryControl: { existingControls: cc_controls, implementationParameter: cc_param, controlNature: cn2, controlType: ct2, cce: cce2, controlValue: cv2, controlRanking: crLabel(cr2), controlRankingValue: cr2 },
       revisedRIR, riskPriority,
       treatmentRequired, treatmentOption, treatmentPlan,
       treatmentTargetDate: targetDate || undefined,
       treatmentCompletionDate: completionDate || undefined,
-      treatmentResponsibleEmail: treatmentEmail || riskOwner?.email,
-      treatmentResponsiblePhone: treatmentPhone || riskOwner?.phone,
+      treatmentResponsibleEmail: treatmentEmail || riskOwner?.metadata?.email,
+      treatmentResponsiblePhone: treatmentPhone || riskOwner?.metadata?.phone,
       rtpReference, actualDate: actualDate || undefined,
       riskAcceptanceNotes: riskNotes,
       riskOwner: selectedRiskOwner,
-    }, {
-      onSuccess: () => navigate("/risks"),
-    });
+    }, { onSuccess: () => navigate("/risks") });
   };
 
-  // Section header component
   const SectionHeader = ({ num, title }: { num: string; title: string }) => (
     <div className="flex items-center gap-2 pt-4 pb-2 border-b border-border">
       <span className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-bold">{num}</span>
@@ -191,7 +192,7 @@ export default function AddRisk() {
 
       <div className="bg-card rounded-lg border shadow-sm p-6 space-y-5">
 
-        {/* ===== SYSTEM GENERATED ===== */}
+        {/* SYSTEM GENERATED */}
         <div className="bg-muted/30 rounded-lg p-4 border border-dashed border-border">
           <p className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">System Generated</p>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -208,13 +209,15 @@ export default function AddRisk() {
               <Label className="text-xs">Risk Owner *</Label>
               <Select value={selectedRiskOwner} onValueChange={setSelectedRiskOwner}>
                 <SelectTrigger className="text-xs"><SelectValue placeholder="Select risk owner" /></SelectTrigger>
-                <SelectContent>{masterRiskOwners.map(o => <SelectItem key={o.id} value={o.name}>{o.name}</SelectItem>)}</SelectContent>
+                <SelectContent>
+                  {apiRiskOwners.map((o: any) => <SelectItem key={o._id} value={o.name}>{o.name}</SelectItem>)}
+                </SelectContent>
               </Select>
             </div>
           </div>
         </div>
 
-        {/* ===== SECTION 1: BASIC INFO ===== */}
+        {/* SECTION 1: BASIC INFO */}
         <SectionHeader num="1" title="Basic Information & Asset" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5"><Label className="text-xs">Risk Name *</Label><Input value={riskName} onChange={e => setRiskName(e.target.value)} placeholder="Enter risk name" className="text-xs" /></div>
@@ -223,50 +226,44 @@ export default function AddRisk() {
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label className="text-xs">Category *</Label>
-              <button onClick={() => setShowCategoryAdd(!showCategoryAdd)} className="text-[10px] text-primary hover:underline font-medium">+ New Category</button>
+              <button onClick={() => setShowCategoryModal(true)} className="text-[10px] text-primary hover:underline font-medium">+ New Category</button>
             </div>
             <Select value={category} onValueChange={v => { setCategory(v); setSubcategory(""); }}>
               <SelectTrigger className="text-xs"><SelectValue placeholder="Select category" /></SelectTrigger>
-              <SelectContent>{allCategories.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
+              <SelectContent>
+                {apiCategories.map((c: any) => <SelectItem key={c._id} value={c.name}>{c.name}</SelectItem>)}
+              </SelectContent>
             </Select>
-            {showCategoryAdd && (
-              <div className="flex gap-2 mt-1">
-                <Input value={newCategory} onChange={e => setNewCategory(e.target.value)} placeholder="New category name" className="h-8 text-xs" />
-                <button onClick={handleAddCategory} className="px-3 py-1 rounded bg-primary text-primary-foreground text-xs hover:opacity-90">Add</button>
-              </div>
-            )}
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Subcategory *</Label>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs">Subcategory *</Label>
+              {category && <button onClick={() => { setNewSubParent(category); setShowSubCategoryModal(true); }} className="text-[10px] text-primary hover:underline font-medium">+ New Subcategory</button>}
+            </div>
             <Select value={subcategory} onValueChange={setSubcategory} disabled={!category}>
               <SelectTrigger className="text-xs"><SelectValue placeholder={category ? "Select subcategory" : "Select category first"} /></SelectTrigger>
-              <SelectContent>{subcategories.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+              <SelectContent>
+                {filteredSubcategories.map((s: any) => <SelectItem key={s._id} value={s.name}>{s.name}</SelectItem>)}
+              </SelectContent>
             </Select>
-            {category && showSubCategoryAdd && (
-              <div className="flex gap-2 mt-1">
-                <Input value={newSubCategory} onChange={e => setNewSubCategory(e.target.value)} placeholder="New subcategory" className="h-8 text-xs" />
-                <button onClick={handleAddSubCategory} className="px-3 py-1 rounded bg-primary text-primary-foreground text-xs hover:opacity-90">Add</button>
-              </div>
-            )}
-            {category && <button onClick={() => setShowSubCategoryAdd(!showSubCategoryAdd)} className="text-[10px] text-primary hover:underline font-medium mt-1">+ New Subcategory</button>}
           </div>
         </div>
 
-        {/* ===== SECTION 2: ASSET INFO ===== */}
+        {/* SECTION 2: ASSET INFO */}
         <SectionHeader num="2" title="Asset Information" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label className="text-xs">Asset (from Asset Register) *</Label>
             <Select value={selectedAsset} onValueChange={setSelectedAsset}>
               <SelectTrigger className="text-xs"><SelectValue placeholder="Select asset" /></SelectTrigger>
-              <SelectContent>{assets.map(a => <SelectItem key={a.id} value={a.name}>{a.id} - {a.name}</SelectItem>)}</SelectContent>
+              <SelectContent>{apiAssets.map((a: any) => <SelectItem key={a._id || a.id} value={a.name}>{a.assetId || a.id} - {a.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Asset Type</Label>
             <Select value={assetType} onValueChange={setAssetType}>
               <SelectTrigger className="text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
-              <SelectContent>{masterAssetTypes.map(t => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}</SelectContent>
+              <SelectContent>{apiAssetTypes.map((t: any) => <SelectItem key={t._id} value={t.name}>{t.name}</SelectItem>)}</SelectContent>
             </Select>
           </div>
         </div>
@@ -282,12 +279,12 @@ export default function AddRisk() {
               <CalcBox label="Score [C+I+A]" value={assetScore} />
               <CalcBox label="Ranking" value={assetRanking} color={assetRanking === "Critical" ? "text-destructive" : assetRanking === "High" ? "text-orange-500" : "text-emerald-600"} />
               <CalcBox label="Asset Value" value={av} color="text-primary" />
-              <CalcBox label="Criticality" value={asset.criticality} />
+              <CalcBox label="Criticality" value={asset.criticality || asset.businessCriticality || "-"} />
             </div>
           </div>
         )}
 
-        {/* ===== SECTION 3: PROBABILITY ===== */}
+        {/* SECTION 3: PROBABILITY */}
         <SectionHeader num="3" title="Probability of Occurrence" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
@@ -303,7 +300,7 @@ export default function AddRisk() {
           <CalcBox label="Risk Impact Rating" value={rirLabel} color={rirColor(absoluteRIR)} />
         </div>
 
-        {/* ===== SECTION 4: IMPACT ===== */}
+        {/* SECTION 4: IMPACT */}
         <SectionHeader num="4" title="Impact" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
@@ -315,17 +312,17 @@ export default function AddRisk() {
           </div>
         </div>
 
-        {/* ===== SECTION 5: FINAL RISK ===== */}
+        {/* SECTION 5: FINAL RISK */}
         <SectionHeader num="5" title="Final Risk Calculation" />
         <div className="grid grid-cols-2 gap-3 bg-muted/40 rounded-md p-4 border">
-          <CalcBox label="Revised RIR: Probability (P) × Impact (I)" value={revisedRIR} sub={`(${probability} × ${impact}) / (${pcr} + ${ccp})`} color={rirColor(revisedRIR)} />
+          <CalcBox label="Revised RIR: P × I / (PCR + CCP)" value={revisedRIR} sub={`(${probability} × ${impact}) / (${pcr} + ${ccp})`} color={rirColor(revisedRIR)} />
           <CalcBox label="Risk Priority" value={riskPriority} color={riskPriority === "Critical" ? "text-destructive" : riskPriority === "High" ? "text-orange-500" : riskPriority === "Medium" ? "text-yellow-600" : "text-emerald-600"} />
         </div>
 
-        {/* ===== SECTION 2 (THREAT): THREAT & VULNERABILITY ===== */}
+        {/* THREAT & VULNERABILITY */}
         <SectionHeader num="T" title="Threat & Vulnerability" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1.5"><Label className="text-xs">Threat</Label><Input value={threat} onChange={e => setThreat(e.target.value)} placeholder="e.g., Physical sabotage or tampering" className="text-xs" /></div>
+          <div className="space-y-1.5"><Label className="text-xs">Threat</Label><Input value={threat} onChange={e => setThreat(e.target.value)} placeholder="e.g., Physical sabotage" className="text-xs" /></div>
           <div className="space-y-1.5">
             <Label className="text-xs">T-Value (1–4)</Label>
             <Select value={String(tValue)} onValueChange={v => setTValue(Number(v))}>
@@ -347,7 +344,7 @@ export default function AddRisk() {
           <CalcBox label="TV Pair" value={`${tvPair} (${tvPairLabel})`} color={tvPairLabel === "Critical" ? "text-destructive" : tvPairLabel === "High" ? "text-orange-500" : "text-foreground"} />
         </div>
 
-        {/* ===== SECTION 7: PRIMARY CONTROL ===== */}
+        {/* SECTION 7: PRIMARY CONTROL */}
         <SectionHeader num="7" title="Primary Control" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5"><Label className="text-xs">Existing Controls</Label><Input value={pc_controls} onChange={e => setPcControls(e.target.value)} placeholder="e.g., SOP reviewed annually" className="text-xs" /></div>
@@ -362,32 +359,21 @@ export default function AddRisk() {
             <Label className="text-xs">Control Nature (CN)</Label>
             <Select value={String(cn1)} onValueChange={v => setCn1(Number(v))}>
               <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="2">Manual (2)</SelectItem>
-                <SelectItem value="4">Automated (4)</SelectItem>
-              </SelectContent>
+              <SelectContent><SelectItem value="2">Manual (2)</SelectItem><SelectItem value="4">Automated (4)</SelectItem></SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Control Type (CT)</Label>
             <Select value={String(ct1)} onValueChange={v => setCt1(Number(v))}>
               <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">Detective (1)</SelectItem>
-                <SelectItem value="2">Corrective (2)</SelectItem>
-                <SelectItem value="3">Preventive (3)</SelectItem>
-              </SelectContent>
+              <SelectContent><SelectItem value="1">Detective (1)</SelectItem><SelectItem value="2">Corrective (2)</SelectItem><SelectItem value="3">Preventive (3)</SelectItem></SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Current Control Effectiveness (CCE) (0–2)</Label>
             <Select value={String(cce1)} onValueChange={v => setCce1(Number(v))}>
               <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0">0 - None</SelectItem>
-                <SelectItem value="1">1 - Partial</SelectItem>
-                <SelectItem value="2">2 - Full</SelectItem>
-              </SelectContent>
+              <SelectContent><SelectItem value="0">0 - None</SelectItem><SelectItem value="1">1 - Partial</SelectItem><SelectItem value="2">2 - Full</SelectItem></SelectContent>
             </Select>
           </div>
         </div>
@@ -396,7 +382,7 @@ export default function AddRisk() {
           <CalcBox label="Control Ranking (CR)" value={`${crLabel(cr1)} (${cr1})`} color="text-primary" />
         </div>
 
-        {/* ===== SECTION 8: COMPENSATORY CONTROL ===== */}
+        {/* SECTION 8: COMPENSATORY CONTROL */}
         <SectionHeader num="8" title="Compensatory / Additional Control" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5"><Label className="text-xs">Existing Controls</Label><Input value={cc_controls} onChange={e => setCcControls(e.target.value)} placeholder="e.g., Digital records transition" className="text-xs" /></div>
@@ -411,32 +397,21 @@ export default function AddRisk() {
             <Label className="text-xs">Control Nature (CN)</Label>
             <Select value={String(cn2)} onValueChange={v => setCn2(Number(v))}>
               <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="2">Manual (2)</SelectItem>
-                <SelectItem value="4">Automated (4)</SelectItem>
-              </SelectContent>
+              <SelectContent><SelectItem value="2">Manual (2)</SelectItem><SelectItem value="4">Automated (4)</SelectItem></SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Control Type (CT)</Label>
             <Select value={String(ct2)} onValueChange={v => setCt2(Number(v))}>
               <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">Detective (1)</SelectItem>
-                <SelectItem value="2">Corrective (2)</SelectItem>
-                <SelectItem value="3">Preventive (3)</SelectItem>
-              </SelectContent>
+              <SelectContent><SelectItem value="1">Detective (1)</SelectItem><SelectItem value="2">Corrective (2)</SelectItem><SelectItem value="3">Preventive (3)</SelectItem></SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Current Control Effectiveness (CCE) (0–2)</Label>
             <Select value={String(cce2)} onValueChange={v => setCce2(Number(v))}>
               <SelectTrigger className="text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="0">0 - None</SelectItem>
-                <SelectItem value="1">1 - Partial</SelectItem>
-                <SelectItem value="2">2 - Full</SelectItem>
-              </SelectContent>
+              <SelectContent><SelectItem value="0">0 - None</SelectItem><SelectItem value="1">1 - Partial</SelectItem><SelectItem value="2">2 - Full</SelectItem></SelectContent>
             </Select>
           </div>
         </div>
@@ -445,7 +420,7 @@ export default function AddRisk() {
           <CalcBox label="Control Ranking (CR)" value={`${crLabel(cr2)} (${cr2})`} color="text-primary" />
         </div>
 
-        {/* ===== SECTION 6: TREATMENT ===== */}
+        {/* SECTION 6: TREATMENT */}
         <SectionHeader num="6" title="Risk Treatment" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
@@ -485,18 +460,18 @@ export default function AddRisk() {
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Treatment Responsible Person (Email)</Label>
-            <Input value={treatmentEmail || riskOwner?.email || ""} onChange={e => setTreatmentEmail(e.target.value)} placeholder="Auto from owner or enter email" className={`text-xs ${riskOwner && !treatmentEmail ? "bg-muted/50" : ""}`} />
+            <Input value={treatmentEmail || riskOwner?.metadata?.email || ""} onChange={e => setTreatmentEmail(e.target.value)} placeholder="Auto from owner or enter email" className={`text-xs ${riskOwner && !treatmentEmail ? "bg-muted/50" : ""}`} />
           </div>
           <div className="space-y-1.5">
             <Label className="text-xs">Treatment Responsible Person (Phone)</Label>
-            <Input value={treatmentPhone || riskOwner?.phone || ""} onChange={e => setTreatmentPhone(e.target.value)} placeholder="Auto from owner or enter phone" className={`text-xs ${riskOwner && !treatmentPhone ? "bg-muted/50" : ""}`} />
+            <Input value={treatmentPhone || riskOwner?.metadata?.phone || ""} onChange={e => setTreatmentPhone(e.target.value)} placeholder="Auto from owner or enter phone" className={`text-xs ${riskOwner && !treatmentPhone ? "bg-muted/50" : ""}`} />
           </div>
           <div className="space-y-1.5"><Label className="text-xs">RTP Reference</Label><Input value={rtpReference} onChange={e => setRtpReference(e.target.value)} placeholder="e.g., RTP-001" className="text-xs" /></div>
           <div className="space-y-1.5"><Label className="text-xs">Actual Date</Label><Input type="date" value={actualDate} onChange={e => setActualDate(e.target.value)} className="text-xs" /></div>
           <div className="col-span-full space-y-1.5"><Label className="text-xs">Risk Acceptance / Other Notes</Label><Textarea value={riskNotes} onChange={e => setRiskNotes(e.target.value)} placeholder="Additional notes..." rows={2} className="text-xs" /></div>
         </div>
 
-        {/* ===== ACTIONS ===== */}
+        {/* ACTIONS */}
         <div className="flex gap-3 pt-4 border-t">
           <button onClick={handleSave} disabled={createRisk.isPending} className="px-6 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition disabled:opacity-50">
             {createRisk.isPending ? "Saving..." : "Save Risk"}
@@ -504,6 +479,44 @@ export default function AddRisk() {
           <button onClick={() => navigate("/risks")} className="px-6 py-2.5 rounded-md border text-sm font-medium hover:bg-muted transition">Cancel</button>
         </div>
       </div>
+
+      {/* ADD CATEGORY MODAL */}
+      <Dialog open={showCategoryModal} onOpenChange={setShowCategoryModal}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Add New Risk Category</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5"><Label className="text-xs">Category Name *</Label><Input value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="e.g., Operational" className="text-xs" /></div>
+            <div className="space-y-1.5"><Label className="text-xs">Description</Label><Input value={newCatDesc} onChange={e => setNewCatDesc(e.target.value)} placeholder="Brief description" className="text-xs" /></div>
+          </div>
+          <DialogFooter>
+            <button onClick={() => setShowCategoryModal(false)} className="px-4 py-2 rounded-md border text-sm hover:bg-muted transition">Cancel</button>
+            <button onClick={handleAddCategory} disabled={createConfig.isPending} className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition disabled:opacity-50">
+              {createConfig.isPending ? "Saving..." : "Save Category"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ADD SUBCATEGORY MODAL */}
+      <Dialog open={showSubCategoryModal} onOpenChange={setShowSubCategoryModal}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Add New Risk Subcategory</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Parent Category</Label>
+              <Input value={newSubParent} disabled className="text-xs bg-muted/50" />
+            </div>
+            <div className="space-y-1.5"><Label className="text-xs">Subcategory Name *</Label><Input value={newSubName} onChange={e => setNewSubName(e.target.value)} placeholder="e.g., Data Breach" className="text-xs" /></div>
+            <div className="space-y-1.5"><Label className="text-xs">Description</Label><Input value={newSubDesc} onChange={e => setNewSubDesc(e.target.value)} placeholder="Brief description" className="text-xs" /></div>
+          </div>
+          <DialogFooter>
+            <button onClick={() => setShowSubCategoryModal(false)} className="px-4 py-2 rounded-md border text-sm hover:bg-muted transition">Cancel</button>
+            <button onClick={handleAddSubCategory} disabled={createConfig.isPending} className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition disabled:opacity-50">
+              {createConfig.isPending ? "Saving..." : "Save Subcategory"}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

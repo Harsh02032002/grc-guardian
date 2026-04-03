@@ -11,8 +11,6 @@ import AssetCategories from "@/pages/AssetCategories";
 import AssetClassification from "@/pages/AssetClassification";
 import RiskRegister from "@/pages/RiskRegister";
 import AddRisk from "@/pages/AddRisk";
-import RiskCategories from "@/pages/RiskCategories";
-import RiskSubcategories from "@/pages/RiskSubcategories";
 import RiskLibrary from "@/pages/RiskLibrary";
 import ControlsRegister from "@/pages/ControlsRegister";
 import AddControl from "@/pages/AddControl";
@@ -28,6 +26,9 @@ import ConfigDepartment from "@/pages/ConfigDepartment";
 import ConfigAssetIdFormat from "@/pages/ConfigAssetIdFormat";
 import ConfigAssetType from "@/pages/ConfigAssetType";
 import ConfigLocation from "@/pages/ConfigLocation";
+import ConfigRiskCategories from "@/pages/ConfigRiskCategories";
+import ConfigRiskSubcategories from "@/pages/ConfigRiskSubcategories";
+import ConfigRiskOwner from "@/pages/ConfigRiskOwner";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,9 @@ const App = () => (
             <Route path="/config/asset-id-format" element={<ConfigAssetIdFormat />} />
             <Route path="/config/asset-type" element={<ConfigAssetType />} />
             <Route path="/config/location" element={<ConfigLocation />} />
+            <Route path="/config/risk-categories" element={<ConfigRiskCategories />} />
+            <Route path="/config/risk-subcategories" element={<ConfigRiskSubcategories />} />
+            <Route path="/config/risk-owners" element={<ConfigRiskOwner />} />
             <Route path="/config/impact" element={<BusinessImpact />} />
             <Route path="/config/cia-matrix" element={<CIAMatrixConfig />} />
             {/* Asset Management */}
@@ -58,8 +62,6 @@ const App = () => (
             {/* Risk Management */}
             <Route path="/risks" element={<RiskRegister />} />
             <Route path="/risks/add" element={<AddRisk />} />
-            <Route path="/risks/categories" element={<RiskCategories />} />
-            <Route path="/risks/subcategories" element={<RiskSubcategories />} />
             <Route path="/risks/library" element={<RiskLibrary />} />
             {/* Controls */}
             <Route path="/controls" element={<ControlsRegister />} />
