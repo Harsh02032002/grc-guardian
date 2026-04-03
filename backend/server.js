@@ -10,7 +10,12 @@ dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true
+}));
 app.use(express.json());
 
 // MongoDB Connection with DNS fix
