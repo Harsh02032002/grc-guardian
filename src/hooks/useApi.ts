@@ -150,3 +150,15 @@ export function useDeleteConfig() {
     onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
   });
 }
+
+export function useUpdateConfig() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => configApi.update(id, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["config"] });
+      toast({ title: "Config updated" });
+    },
+    onError: (err: Error) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+  });
+}
