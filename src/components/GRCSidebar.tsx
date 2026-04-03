@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   Shield,
   FileCheck,
-  Settings,
   ClipboardCheck,
   BarChart3,
   ChevronDown,
@@ -14,17 +13,8 @@ import {
   Wrench,
 } from "lucide-react";
 
-interface SubItem {
-  title: string;
-  url: string;
-}
-
-interface MenuItem {
-  title: string;
-  icon: React.ElementType;
-  url?: string;
-  subItems?: SubItem[];
-}
+interface SubItem { title: string; url: string; }
+interface MenuItem { title: string; icon: React.ElementType; url?: string; subItems?: SubItem[]; }
 
 const menuItems: MenuItem[] = [
   { title: "Dashboard", icon: LayoutDashboard, url: "/" },
@@ -39,6 +29,9 @@ const menuItems: MenuItem[] = [
       { title: "Asset ID Format", url: "/config/asset-id-format" },
       { title: "Asset Type", url: "/config/asset-type" },
       { title: "Location", url: "/config/location" },
+      { title: "Risk Categories", url: "/config/risk-categories" },
+      { title: "Risk Subcategories", url: "/config/risk-subcategories" },
+      { title: "Risk Owners", url: "/config/risk-owners" },
       { title: "Business Impact Guidelines", url: "/config/impact" },
       { title: "CIA Matrix Configuration", url: "/config/cia-matrix" },
     ],
@@ -57,8 +50,6 @@ const menuItems: MenuItem[] = [
     subItems: [
       { title: "Risk Register", url: "/risks" },
       { title: "Add Risk", url: "/risks/add" },
-      { title: "Risk Categories", url: "/risks/categories" },
-      { title: "Risk Subcategories", url: "/risks/subcategories" },
       { title: "Risk Library", url: "/risks/library" },
     ],
   },
@@ -109,54 +100,26 @@ export function GRCSidebar() {
         {menuItems.map((item) => {
           if (item.url) {
             return (
-              <NavLink
-                key={item.title}
-                to={item.url}
-                end={item.url === "/"}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${
-                    isActive
-                      ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  }`
-                }
-              >
-                <item.icon className="h-4 w-4 shrink-0" />
-                <span>{item.title}</span>
+              <NavLink key={item.title} to={item.url} end={item.url === "/"}
+                className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${isActive ? "bg-sidebar-accent text-sidebar-primary font-medium" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"}`}>
+                <item.icon className="h-4 w-4 shrink-0" /><span>{item.title}</span>
               </NavLink>
             );
           }
-
           const isOpen = openMenus[item.title] ?? false;
-
           return (
             <div key={item.title}>
-              <button
-                onClick={() => toggleMenu(item.title)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm w-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
-              >
+              <button onClick={() => toggleMenu(item.title)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm w-full text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors">
                 <item.icon className="h-4 w-4 shrink-0" />
                 <span className="flex-1 text-left">{item.title}</span>
-                {isOpen ? (
-                  <ChevronDown className="h-3.5 w-3.5" />
-                ) : (
-                  <ChevronRight className="h-3.5 w-3.5" />
-                )}
+                {isOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
               </button>
               {isOpen && item.subItems && (
                 <div className="ml-6 mt-0.5 space-y-0.5 border-l border-sidebar-border pl-3">
                   {item.subItems.map((sub) => (
-                    <NavLink
-                      key={sub.url}
-                      to={sub.url}
-                      className={({ isActive }) =>
-                        `block px-3 py-2 rounded-md text-xs transition-colors ${
-                          isActive
-                            ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                        }`
-                      }
-                    >
+                    <NavLink key={sub.url} to={sub.url}
+                      className={({ isActive }) => `block px-3 py-2 rounded-md text-xs transition-colors ${isActive ? "bg-sidebar-accent text-sidebar-primary font-medium" : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"}`}>
                       {sub.title}
                     </NavLink>
                   ))}
