@@ -195,7 +195,7 @@ export function RiskTable({ searchQuery = "", onRiskSelect, onRiskEdit, onRiskVi
 
     // Apply priority filter
     if (filterPriority !== 'all') {
-      filtered = filtered.filter(risk => risk.riskPriority === filterPriority);
+      filtered = filtered.filter((risk: any) => risk.riskPriority === filterPriority);
     }
 
     // Sort risks
