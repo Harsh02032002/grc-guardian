@@ -101,7 +101,7 @@ export const useAuthStore = create<AuthState>()(
 );
 
 // Helper to get auth headers
-export const getAuthHeaders = () => {
+export const getAuthHeaders = (): Record<string, string> => {
   const token = useAuthStore.getState().token;
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
