@@ -162,7 +162,7 @@ export default function AssetRegister() {
 
     // Apply search filter
     if (searchQuery) {
-      filtered = filtered.filter(asset => 
+      filtered = filtered.filter((asset: any) => 
         asset.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         asset.assetId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         asset.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
