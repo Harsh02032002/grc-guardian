@@ -186,7 +186,7 @@ export default function AssetRegister() {
     }
 
     // Sort assets
-    return filtered.sort((a, b) => {
+    return filtered.sort((a: any, b: any) => {
       let aValue = a[sortField];
       let bValue = b[sortField];
 
