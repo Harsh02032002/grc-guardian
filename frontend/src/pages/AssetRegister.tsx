@@ -177,7 +177,7 @@ export default function AssetRegister() {
 
     // Apply criticality filter
     if (filterCriticality !== 'all') {
-      filtered = filtered.filter(asset => asset.businessCriticality === filterCriticality);
+      filtered = filtered.filter((asset: any) => asset.businessCriticality === filterCriticality);
     }
 
     // Apply department filter
