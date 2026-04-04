@@ -1,80 +1,67 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const helmet = require("helmet");
 const dns = require("dns");
 require("dotenv").config();
 
-// Set DNS servers to avoid SRV lookup issues
-dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
+dns.setServers(["8.8.8.8", "8.8.4.4", "1.1.1.1"]);
 
 const app = express();
 
-// Middleware
+// Security
+app.use(helmet());
 app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  credentials: true
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  credentials: true,
 }));
 app.use(express.json());
 
-// MongoDB Connection with DNS fix
+// MongoDB Connection
 const connectDB = async () => {
   try {
     const mongoURI = process.env.MONGODB_URI || "mongodb://localhost:27017/grc_platform";
-    
-    const options = {
+    await mongoose.connect(mongoURI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
-      family: 4, // Use IPv4
+      family: 4,
       maxPoolSize: 10,
       retryWrites: true,
-      w: 'majority'
-    };
-
-    await mongoose.connect(mongoURI, options);
+      w: "majority",
+    });
     console.log("✅ MongoDB Connected");
-    
-    // Test the connection
-    mongoose.connection.on('error', (err) => {
-      console.error('❌ MongoDB connection error:', err);
-    });
-    
-    mongoose.connection.on('disconnected', () => {
-      console.log('⚠️ MongoDB disconnected');
-    });
-    
-    mongoose.connection.on('reconnected', () => {
-      console.log('✅ MongoDB reconnected');
-    });
-    
-  } catch (error) {
-    console.error("❌ MongoDB Error:", error);
-    
-    // If Atlas fails, try local MongoDB
-    if (process.env.MONGODB_URI && error.message.includes('querySrv')) {
-      console.log("🔄 Atlas DNS failed, trying local MongoDB...");
-      try {
-        await mongoose.connect("mongodb://localhost:27017/grc_platform", options);
-        console.log("✅ Connected to local MongoDB");
-      } catch (localError) {
-        console.error("❌ Local MongoDB also failed:", localError);
-        console.log("🔄 Retrying connection in 5 seconds...");
-        setTimeout(connectDB, 5000);
-      }
-    } else {
-      console.log("🔄 Retrying connection in 5 seconds...");
-      setTimeout(connectDB, 5000);
+
+    // Seed default super admin
+    const User = require("./models/User");
+    const existingSA = await User.findOne({ role: "superadmin" });
+    if (!existingSA) {
+      await User.create({
+        name: "Super Admin",
+        email: "superadmin@grc.com",
+        password: "Admin@123",
+        role: "superadmin",
+        isApproved: true,
+        isVerified: true,
+        emailVerifiedAt: new Date(),
+        assignedModules: ["all"],
+      });
+      console.log("✅ Default Super Admin created (superadmin@grc.com / Admin@123)");
     }
+  } catch (error) {
+    console.error("❌ MongoDB Error:", error.message);
+    setTimeout(connectDB, 5000);
   }
 };
 
-// Connect to database
 connectDB();
 
 // Routes
+app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/assets", require("./routes/assetRoutes"));
 app.use("/api/risks", require("./routes/riskRoutes"));
 app.use("/api/controls", require("./routes/controlRoutes"));
