@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const assetSchema = new mongoose.Schema(
   {
     assetId: { type: String, unique: true, required: true },
+    companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company" },
     name: { type: String, required: true },
     category: { type: String, required: true },
     assetType: { type: String },
