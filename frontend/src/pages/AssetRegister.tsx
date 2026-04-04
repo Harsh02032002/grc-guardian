@@ -182,7 +182,7 @@ export default function AssetRegister() {
 
     // Apply department filter
     if (filterDepartment !== 'all') {
-      filtered = filtered.filter(asset => asset.department === filterDepartment);
+      filtered = filtered.filter((asset: any) => asset.department === filterDepartment);
     }
 
     // Sort assets
