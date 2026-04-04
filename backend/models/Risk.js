@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const riskSchema = new mongoose.Schema(
   {
     riskId: { type: String, unique: true, required: true },
+    companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company" },
     name: { type: String, required: true },
     controlReference: { type: String },
     description: { type: String },

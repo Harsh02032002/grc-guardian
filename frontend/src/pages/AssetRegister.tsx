@@ -162,7 +162,7 @@ export default function AssetRegister() {
 
     // Apply search filter
     if (searchQuery) {
-      filtered = filtered.filter(asset => 
+      filtered = filtered.filter((asset: any) => 
         asset.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         asset.assetId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         asset.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -172,21 +172,21 @@ export default function AssetRegister() {
 
     // Apply status filter
     if (filterStatus !== 'all') {
-      filtered = filtered.filter(asset => asset.status === filterStatus);
+      filtered = filtered.filter((asset: any) => asset.status === filterStatus);
     }
 
     // Apply criticality filter
     if (filterCriticality !== 'all') {
-      filtered = filtered.filter(asset => asset.businessCriticality === filterCriticality);
+      filtered = filtered.filter((asset: any) => asset.businessCriticality === filterCriticality);
     }
 
     // Apply department filter
     if (filterDepartment !== 'all') {
-      filtered = filtered.filter(asset => asset.department === filterDepartment);
+      filtered = filtered.filter((asset: any) => asset.department === filterDepartment);
     }
 
     // Sort assets
-    return filtered.sort((a, b) => {
+    return filtered.sort((a: any, b: any) => {
       let aValue = a[sortField];
       let bValue = b[sortField];
 

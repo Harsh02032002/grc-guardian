@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const treatmentSchema = new mongoose.Schema(
   {
     treatmentId: { type: String, unique: true, required: true },
+    companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company" },
     riskId: { type: String },
     riskName: { type: String, required: true },
     plan: { type: String },

@@ -1,7 +1,19 @@
-import { Search, Bell, User } from "lucide-react";
+import { Search, Bell, User, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useAuthStore } from "@/stores/authStore";
+import { useNavigate } from "react-router-dom";
 
 export function TopHeader() {
+  const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
+  const companyName = user?.companyId && typeof user.companyId === "object" ? user.companyId.name : "";
+
   return (
     <header className="h-14 border-b bg-card flex items-center justify-between px-6 shrink-0">
       <div className="relative w-80">
@@ -12,8 +24,11 @@ export function TopHeader() {
         />
       </div>
       <div className="flex items-center gap-4">
+        {companyName && (
+          <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">{companyName}</span>
+        )}
         <button className="relative p-2 rounded-md hover:bg-muted transition-colors">
-          <Bell className="h-4.5 w-4.5 text-muted-foreground" />
+          <Bell className="h-4 w-4 text-muted-foreground" />
           <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive" />
         </button>
         <div className="flex items-center gap-3">
@@ -21,9 +36,16 @@ export function TopHeader() {
             <User className="h-4 w-4 text-primary-foreground" />
           </div>
           <div className="hidden sm:block">
-            <p className="text-sm font-medium leading-none">Admin User</p>
-            <p className="text-xs text-muted-foreground">admin@grc.com</p>
+            <p className="text-sm font-medium leading-none">{user?.name || "Guest"}</p>
+            <p className="text-xs text-muted-foreground">{user?.email || ""}</p>
           </div>
+          <button
+            onClick={handleLogout}
+            className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-destructive"
+            title="Logout"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
       </div>
     </header>
