@@ -172,7 +172,7 @@ export default function AssetRegister() {
 
     // Apply status filter
     if (filterStatus !== 'all') {
-      filtered = filtered.filter(asset => asset.status === filterStatus);
+      filtered = filtered.filter((asset: any) => asset.status === filterStatus);
     }
 
     // Apply criticality filter
