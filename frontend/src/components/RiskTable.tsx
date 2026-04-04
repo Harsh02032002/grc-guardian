@@ -175,7 +175,7 @@ export function RiskTable({ searchQuery = "", onRiskSelect, onRiskEdit, onRiskVi
 
     // Apply search filter
     if (searchQuery) {
-      filtered = filtered.filter(risk => 
+      filtered = filtered.filter((risk: any) => 
         risk.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         risk.riskId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         risk.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
