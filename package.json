@@ -1,0 +1,11 @@
+{
+  "name": "grc-platform",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "cd frontend && npx vite --port 8080 --host",
+    "build": "cd frontend && npx vite build",
+    "preview": "cd frontend && npx vite preview"
+  }
+}
