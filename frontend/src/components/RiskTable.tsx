@@ -190,7 +190,7 @@ export function RiskTable({ searchQuery = "", onRiskSelect, onRiskEdit, onRiskVi
 
     // Apply status filter
     if (filterStatus !== 'all') {
-      filtered = filtered.filter(risk => risk.status === filterStatus);
+      filtered = filtered.filter((risk: any) => risk.status === filterStatus);
     }
 
     // Apply priority filter
