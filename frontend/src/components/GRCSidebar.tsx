@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { useAuthStore } from "@/stores/authStore";
 import {
   LayoutDashboard,
   Box,
   AlertTriangle,
   Shield,
   FileCheck,
-  Settings,
   ClipboardCheck,
   BarChart3,
   ChevronDown,
   ChevronRight,
   Wrench,
+  Users,
+  LogOut,
 } from "lucide-react";
 
 interface SubItem {
@@ -23,19 +25,20 @@ interface MenuItem {
   title: string;
   icon: React.ElementType;
   url?: string;
+  module?: string;
   subItems?: SubItem[];
 }
 
 const menuItems: MenuItem[] = [
-  { title: "Dashboard", icon: LayoutDashboard, url: "/" },
+  { title: "Dashboard", icon: LayoutDashboard, url: "/", module: "dashboard" },
   {
     title: "Configuration",
     icon: Wrench,
+    module: "configuration",
     subItems: [
       { title: "Risk Owners", url: "/risk-owners" },
-       { title: "Risk Categories", url: "/risks/categories" },
+      { title: "Risk Categories", url: "/risks/categories" },
       { title: "Risk Subcategories", url: "/risks/subcategories" },
-      
       { title: "Asset Categories", url: "/config/asset-categories" },
       { title: "Asset Classification", url: "/config/asset-classification" },
       { title: "Retention Period", url: "/config/retention-period" },
@@ -45,12 +48,12 @@ const menuItems: MenuItem[] = [
       { title: "Location", url: "/config/location" },
       { title: "Business Impact Guidelines", url: "/config/impact" },
       { title: "CIA Matrix Configuration", url: "/config/cia-matrix" },
-      
     ],
   },
   {
     title: "Asset Management",
     icon: Box,
+    module: "assets",
     subItems: [
       { title: "Asset Register", url: "/assets" },
       { title: "Add Asset", url: "/assets/add" },
@@ -59,16 +62,17 @@ const menuItems: MenuItem[] = [
   {
     title: "Risk Management",
     icon: AlertTriangle,
+    module: "risks",
     subItems: [
       { title: "Risk Register", url: "/risks" },
       { title: "Add Risk", url: "/risks/add" },
       { title: "Risk Library", url: "/risks/library" },
-      
     ],
   },
   {
     title: "Controls Management",
     icon: Shield,
+    module: "controls",
     subItems: [
       { title: "Controls Register", url: "/controls" },
       { title: "Add Control", url: "/controls/add" },
@@ -77,16 +81,18 @@ const menuItems: MenuItem[] = [
   {
     title: "Risk Treatment",
     icon: FileCheck,
+    module: "treatments",
     subItems: [
       { title: "Treatment Register", url: "/treatments" },
       { title: "Add Treatment Plan", url: "/treatments/add" },
     ],
   },
-  { title: "Audit & Version Control", icon: ClipboardCheck, url: "/audit" },
-  { title: "Reports & Analytics", icon: BarChart3, url: "/reports" },
+  { title: "Audit & Version Control", icon: ClipboardCheck, url: "/audit", module: "audit" },
+  { title: "Reports & Analytics", icon: BarChart3, url: "/reports", module: "reports" },
 ];
 
 export function GRCSidebar() {
+  const { user, logout } = useAuthStore();
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
     "Configuration": true,
     "Asset Management": true,
@@ -94,8 +100,16 @@ export function GRCSidebar() {
   });
 
   const toggleMenu = (title: string) => {
-    setOpenMenus((prev) => ({ ...prev, [title]: !prev[title] }));
+    setOpenMenus((prev: Record<string, boolean>) => ({ ...prev, [title]: !prev[title] }));
   };
+
+  // Filter menu items based on user role and assigned modules
+  const filteredMenuItems = menuItems.filter((item) => {
+    if (!user) return false;
+    if (user.role === "superadmin") return true;
+    if (!item.module) return true;
+    return user.assignedModules.includes(item.module) || user.assignedModules.includes("all");
+  });
 
   return (
     <aside className="w-64 min-h-screen bg-sidebar flex flex-col border-r border-sidebar-border shrink-0">
@@ -103,14 +117,31 @@ export function GRCSidebar() {
         <div className="flex items-center gap-2">
           <Shield className="h-7 w-7 text-sidebar-primary" />
           <div>
-            <h1 className="text-base font-bold text-sidebar-accent-foreground tracking-tight">GRC Platform</h1>
+            <h1 className="text-base font-bold text-sidebar-accent-foreground tracking-tight">GRC Guardian</h1>
             <p className="text-[10px] text-sidebar-foreground">Governance · Risk · Compliance</p>
           </div>
         </div>
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {menuItems.map((item) => {
+        {/* Admin Panel link for superadmin */}
+        {user?.role === "superadmin" && (
+          <NavLink
+            to="/admin"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${
+                isActive
+                  ? "bg-sidebar-accent text-sidebar-primary font-medium"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              }`
+            }
+          >
+            <Users className="h-4 w-4 shrink-0" />
+            <span>Admin Panel</span>
+          </NavLink>
+        )}
+
+        {filteredMenuItems.map((item) => {
           if (item.url) {
             return (
               <NavLink
@@ -171,8 +202,24 @@ export function GRCSidebar() {
         })}
       </nav>
 
-      <div className="px-5 py-4 border-t border-sidebar-border">
-        <p className="text-[10px] text-sidebar-foreground">v1.0.0 · Enterprise Edition</p>
+      {/* User info & logout */}
+      <div className="px-4 py-3 border-t border-sidebar-border">
+        {user && (
+          <div className="flex items-center justify-between">
+            <div className="min-w-0">
+              <p className="text-xs font-medium text-sidebar-accent-foreground truncate">{user.name}</p>
+              <p className="text-[10px] text-sidebar-foreground truncate">{user.role}</p>
+            </div>
+            <button
+              onClick={logout}
+              className="p-1.5 rounded-md text-sidebar-foreground hover:bg-sidebar-accent hover:text-destructive transition-colors"
+              title="Logout"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+        <p className="text-[10px] text-sidebar-foreground mt-2">v1.0.0 · Enterprise Edition</p>
       </div>
     </aside>
   );
