@@ -1,11 +1,57 @@
 const express = require("express");
 const router = express.Router();
 const Config = require("../models/Config");
+const { authenticate, authorize, checkModule } = require("../middleware/auth");
+
+router.use(authenticate);
+router.use(checkModule("configuration"));
+
+const getRequesterCompanyId = (req) => req.user.companyId?._id || req.user.companyId || null;
+
+const getReadFilter = (req) => {
+  if (req.user.role === "superadmin") {
+    if (req.query.companyId === "global") {
+      return { companyId: null };
+    }
+
+    if (req.query.companyId) {
+      return { $or: [{ companyId: null }, { companyId: req.query.companyId }] };
+    }
+
+    return {};
+  }
+
+  return { $or: [{ companyId: null }, { companyId: getRequesterCompanyId(req) }] };
+};
+
+const getWritePayload = (req) => {
+  const payload = { ...req.body };
+
+  if (req.user.role === "superadmin") {
+    payload.companyId = null;
+    payload.createdByRole = "superadmin";
+    return payload;
+  }
+
+  payload.companyId = getRequesterCompanyId(req);
+  payload.createdByRole = req.user.role;
+  return payload;
+};
+
+const getMutationFilter = (req, id) => {
+  if (req.user.role === "superadmin") {
+    return { _id: id };
+  }
+
+  return { _id: id, companyId: getRequesterCompanyId(req) };
+};
 
 // GET all configs by type
 router.get("/:type", async (req, res) => {
   try {
-    const configs = await Config.find({ type: req.params.type, isActive: true }).sort({ name: 1 });
+    const configs = await Config.find({ type: req.params.type, isActive: true, ...getReadFilter(req) })
+      .populate("companyId", "name")
+      .sort({ companyId: 1, name: 1 });
     res.json(configs);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -15,7 +61,7 @@ router.get("/:type", async (req, res) => {
 // POST create config
 router.post("/", async (req, res) => {
   try {
-    const config = new Config(req.body);
+    const config = new Config(getWritePayload(req));
     await config.save();
     res.status(201).json(config);
   } catch (err) {
@@ -26,7 +72,10 @@ router.post("/", async (req, res) => {
 // PUT update config
 router.put("/:id", async (req, res) => {
   try {
-    const config = await Config.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const config = await Config.findOneAndUpdate(getMutationFilter(req, req.params.id), getWritePayload(req), {
+      new: true,
+      runValidators: true,
+    });
     if (!config) return res.status(404).json({ error: "Config not found" });
     res.json(config);
   } catch (err) {
@@ -37,7 +86,7 @@ router.put("/:id", async (req, res) => {
 // DELETE config (soft delete)
 router.delete("/:id", async (req, res) => {
   try {
-    const config = await Config.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true });
+    const config = await Config.findOneAndUpdate(getMutationFilter(req, req.params.id), { isActive: false }, { new: true });
     if (!config) return res.status(404).json({ error: "Config not found" });
     res.json({ message: "Config deleted" });
   } catch (err) {
@@ -46,7 +95,7 @@ router.delete("/:id", async (req, res) => {
 });
 
 // Seed default configs
-router.post("/seed/defaults", async (req, res) => {
+router.post("/seed/defaults", authorize("superadmin"), async (req, res) => {
   try {
     const defaults = [
       // Asset Categories
@@ -101,7 +150,11 @@ router.post("/seed/defaults", async (req, res) => {
     ];
 
     for (const item of defaults) {
-      await Config.findOneAndUpdate({ type: item.type, name: item.name }, item, { upsert: true, new: true });
+      await Config.findOneAndUpdate(
+        { type: item.type, name: item.name, companyId: null },
+        { ...item, companyId: null, createdByRole: "superadmin", isActive: true },
+        { upsert: true, new: true }
+      );
     }
 
     res.json({ message: "Default configs seeded successfully", count: defaults.length });
