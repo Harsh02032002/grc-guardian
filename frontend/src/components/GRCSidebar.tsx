@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
+import { canAccessModule } from "@/lib/access";
 import {
   LayoutDashboard,
   Box,
@@ -51,7 +52,7 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
-    title: "Asset Management",
+    title: "Assets",
     icon: Box,
     module: "assets",
     subItems: [
@@ -60,7 +61,7 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
-    title: "Risk Management",
+    title: "Risks",
     icon: AlertTriangle,
     module: "risks",
     subItems: [
@@ -70,7 +71,7 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
-    title: "Controls Management",
+    title: "Controls",
     icon: Shield,
     module: "controls",
     subItems: [
@@ -79,7 +80,7 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
-    title: "Risk Treatment",
+    title: "Treatments",
     icon: FileCheck,
     module: "treatments",
     subItems: [
@@ -87,16 +88,14 @@ const menuItems: MenuItem[] = [
       { title: "Add Treatment Plan", url: "/treatments/add" },
     ],
   },
-  { title: "Audit & Version Control", icon: ClipboardCheck, url: "/audit", module: "audit" },
-  { title: "Reports & Analytics", icon: BarChart3, url: "/reports", module: "reports" },
 ];
 
 export function GRCSidebar() {
   const { user, logout } = useAuthStore();
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
     "Configuration": true,
-    "Asset Management": true,
-    "Risk Management": true,
+    "Assets": true,
+    "Risks": true,
   });
 
   const toggleMenu = (title: string) => {
@@ -106,9 +105,8 @@ export function GRCSidebar() {
   // Filter menu items based on user role and assigned modules
   const filteredMenuItems = menuItems.filter((item) => {
     if (!user) return false;
-    if (user.role === "superadmin") return true;
     if (!item.module) return true;
-    return user.assignedModules.includes(item.module) || user.assignedModules.includes("all");
+    return canAccessModule(user, item.module);
   });
 
   return (
