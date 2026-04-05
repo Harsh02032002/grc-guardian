@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
+import { canAccessModule, getDefaultRouteForUser } from "@/lib/access";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -19,14 +20,14 @@ export function ProtectedRoute({ children, requiredRole, requiredModule }: Prote
     return <Navigate to="/login" replace />;
   }
 
+  const fallbackRoute = getDefaultRouteForUser(user);
+
   if (requiredRole && !requiredRole.includes(user.role)) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={fallbackRoute} replace />;
   }
 
-  if (requiredModule && user.role !== "superadmin") {
-    if (!user.assignedModules.includes(requiredModule) && !user.assignedModules.includes("all")) {
-      return <Navigate to="/" replace />;
-    }
+  if (requiredModule && !canAccessModule(user, requiredModule)) {
+    return <Navigate to={fallbackRoute} replace />;
   }
 
   return <>{children}</>;

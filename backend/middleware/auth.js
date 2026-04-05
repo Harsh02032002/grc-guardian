@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 const JWT_SECRET = process.env.JWT_SECRET || "grc-super-secret-key-2024";
+const DEFAULT_CLIENT_MODULES = ["dashboard", "assets", "risks", "controls", "treatments", "configuration"];
 
 // Auth middleware - verify JWT
 const authenticate = async (req, res, next) => {
@@ -12,8 +13,16 @@ const authenticate = async (req, res, next) => {
     const decoded = jwt.verify(token, JWT_SECRET);
     const user = await User.findById(decoded.id).populate("companyId");
     if (!user) return res.status(401).json({ error: "User not found" });
-    if (!user.isApproved && user.role !== "superadmin")
-      return res.status(403).json({ error: "Account not approved yet" });
+
+    if (user.role !== "superadmin") {
+      if (!user.isVerified) {
+        return res.status(403).json({ error: "Please verify your email before continuing" });
+      }
+
+      if (!user.isApproved || user.companyId?.isApproved === false) {
+        return res.status(403).json({ error: "Your company is pending Super Admin approval" });
+      }
+    }
 
     req.user = user;
     next();
@@ -36,12 +45,15 @@ const authorize = (...roles) => {
 const checkModule = (moduleName) => {
   return (req, res, next) => {
     if (req.user.role === "superadmin") return next();
-    if (
-      req.user.assignedModules.includes(moduleName) ||
-      req.user.assignedModules.includes("all")
-    ) {
+
+    const assignedModules = req.user.role === "client"
+      ? DEFAULT_CLIENT_MODULES
+      : (req.user.assignedModules || []);
+
+    if (assignedModules.includes(moduleName) || assignedModules.includes("all")) {
       return next();
     }
+
     return res.status(403).json({ error: `No access to ${moduleName} module` });
   };
 };
@@ -62,4 +74,4 @@ const companyScope = (req, res, next) => {
   next();
 };
 
-module.exports = { authenticate, authorize, checkModule, companyScope, JWT_SECRET };
+module.exports = { authenticate, authorize, checkModule, companyScope, JWT_SECRET, DEFAULT_CLIENT_MODULES };

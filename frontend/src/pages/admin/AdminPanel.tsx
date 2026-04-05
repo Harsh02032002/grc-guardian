@@ -9,19 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Building2, Users, Shield, CheckCircle, XCircle, Plus, Trash2, Settings } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { MODULE_OPTIONS } from "@/lib/access";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
-
-const ALL_MODULES = [
-  { key: "dashboard", label: "Dashboard" },
-  { key: "assets", label: "Asset Management" },
-  { key: "risks", label: "Risk Management" },
-  { key: "controls", label: "Controls Management" },
-  { key: "treatments", label: "Risk Treatment" },
-  { key: "configuration", label: "Configuration" },
-  { key: "audit", label: "Audit & Version Control" },
-  { key: "reports", label: "Reports & Analytics" },
-];
 
 export default function AdminPanel() {
   const { user } = useAuthStore();
@@ -93,6 +83,16 @@ export default function AdminPanel() {
   };
 
   const createSubAdmin = async () => {
+    if (!subAdminForm.companyId) {
+      toast({ title: "Select company", description: "Sub-admin ko company assign karna zaroori hai.", variant: "destructive" });
+      return;
+    }
+
+    if (subAdminForm.assignedModules.length === 0) {
+      toast({ title: "Select modules", description: "Kam se kam ek module assign karo.", variant: "destructive" });
+      return;
+    }
+
     try {
       const res = await fetch(`${API_BASE_URL}/admin/users/create-subadmin`, {
         method: "POST",
@@ -145,6 +145,7 @@ export default function AdminPanel() {
           <h1 className="page-title">Admin Panel</h1>
           <p className="page-subtitle">Manage companies, users & permissions</p>
         </div>
+<<<<<<< HEAD
         {isSuperAdmin && (
           <Dialog open={showCreateSubAdmin} onOpenChange={setShowCreateSubAdmin}>
             <DialogTrigger asChild>
@@ -156,6 +157,50 @@ export default function AdminPanel() {
                 <div className="space-y-1">
                   <Label>Name</Label>
                   <Input value={subAdminForm.name} onChange={(e) => setSubAdminForm({ ...subAdminForm, name: e.target.value })} />
+=======
+        <Dialog open={showCreateSubAdmin} onOpenChange={setShowCreateSubAdmin}>
+          <DialogTrigger asChild>
+            <Button><Plus className="h-4 w-4 mr-2" />Create Sub-Admin</Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>Create Sub-Admin</DialogTitle></DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <Label>Name</Label>
+                <Input value={subAdminForm.name} onChange={(e) => setSubAdminForm({ ...subAdminForm, name: e.target.value })} />
+              </div>
+              <div className="space-y-1">
+                <Label>Email</Label>
+                <Input type="email" value={subAdminForm.email} onChange={(e) => setSubAdminForm({ ...subAdminForm, email: e.target.value })} />
+              </div>
+              <div className="space-y-1">
+                <Label>Password</Label>
+                <Input type="password" value={subAdminForm.password} onChange={(e) => setSubAdminForm({ ...subAdminForm, password: e.target.value })} />
+              </div>
+              <div className="space-y-1">
+                <Label>Assign Company</Label>
+                <Select value={subAdminForm.companyId} onValueChange={(v) => setSubAdminForm({ ...subAdminForm, companyId: v })}>
+                  <SelectTrigger><SelectValue placeholder="Select company" /></SelectTrigger>
+                  <SelectContent>
+                    {companies.filter((c) => c.isApproved).map((c) => (
+                      <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Assign Modules</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {MODULE_OPTIONS.map((mod) => (
+                    <label key={mod.key} className="flex items-center gap-2 text-sm cursor-pointer p-2 rounded-md hover:bg-muted">
+                      <Checkbox
+                        checked={subAdminForm.assignedModules.includes(mod.key)}
+                        onCheckedChange={() => toggleModule(mod.key)}
+                      />
+                      {mod.label}
+                    </label>
+                  ))}
+>>>>>>> 7cd9556b387e7761f6b507fc67e66581ff86b5d9
                 </div>
                 <div className="space-y-1">
                   <Label>Email</Label>
@@ -356,7 +401,7 @@ function EditModulesDialog({ user, companies, onSave }: { user: any; companies: 
       <DialogContent>
         <DialogHeader><DialogTitle>Edit Modules for {user.name}</DialogTitle></DialogHeader>
         <div className="grid grid-cols-2 gap-2 py-4">
-          {ALL_MODULES.map((mod) => (
+          {MODULE_OPTIONS.map((mod) => (
             <label key={mod.key} className="flex items-center gap-2 text-sm cursor-pointer p-2 rounded-md hover:bg-muted">
               <Checkbox checked={modules.includes(mod.key)} onCheckedChange={() => toggle(mod.key)} />
               {mod.label}
