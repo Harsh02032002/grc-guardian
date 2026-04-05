@@ -9,19 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Building2, Users, Shield, CheckCircle, XCircle, Plus, Trash2, Settings } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { MODULE_OPTIONS } from "@/lib/access";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-
-const ALL_MODULES = [
-  { key: "dashboard", label: "Dashboard" },
-  { key: "assets", label: "Asset Management" },
-  { key: "risks", label: "Risk Management" },
-  { key: "controls", label: "Controls Management" },
-  { key: "treatments", label: "Risk Treatment" },
-  { key: "configuration", label: "Configuration" },
-  { key: "audit", label: "Audit & Version Control" },
-  { key: "reports", label: "Reports & Analytics" },
-];
 
 export default function AdminPanel() {
   const { user } = useAuthStore();
@@ -75,6 +65,16 @@ export default function AdminPanel() {
   };
 
   const createSubAdmin = async () => {
+    if (!subAdminForm.companyId) {
+      toast({ title: "Select company", description: "Sub-admin ko company assign karna zaroori hai.", variant: "destructive" });
+      return;
+    }
+
+    if (subAdminForm.assignedModules.length === 0) {
+      toast({ title: "Select modules", description: "Kam se kam ek module assign karo.", variant: "destructive" });
+      return;
+    }
+
     try {
       const res = await fetch(`${API_BASE_URL}/admin/users/create-subadmin`, {
         method: "POST",
@@ -160,7 +160,7 @@ export default function AdminPanel() {
               <div className="space-y-2">
                 <Label>Assign Modules</Label>
                 <div className="grid grid-cols-2 gap-2">
-                  {ALL_MODULES.map((mod) => (
+                  {MODULE_OPTIONS.map((mod) => (
                     <label key={mod.key} className="flex items-center gap-2 text-sm cursor-pointer p-2 rounded-md hover:bg-muted">
                       <Checkbox
                         checked={subAdminForm.assignedModules.includes(mod.key)}
@@ -334,7 +334,7 @@ function EditModulesDialog({ user, companies, onSave }: { user: any; companies: 
       <DialogContent>
         <DialogHeader><DialogTitle>Edit Modules for {user.name}</DialogTitle></DialogHeader>
         <div className="grid grid-cols-2 gap-2 py-4">
-          {ALL_MODULES.map((mod) => (
+          {MODULE_OPTIONS.map((mod) => (
             <label key={mod.key} className="flex items-center gap-2 text-sm cursor-pointer p-2 rounded-md hover:bg-muted">
               <Checkbox checked={modules.includes(mod.key)} onCheckedChange={() => toggle(mod.key)} />
               {mod.label}

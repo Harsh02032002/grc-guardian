@@ -4,7 +4,7 @@ const crypto = require("crypto");
 const router = express.Router();
 const User = require("../models/User");
 const Company = require("../models/Company");
-const { authenticate, JWT_SECRET } = require("../middleware/auth");
+const { authenticate, JWT_SECRET, DEFAULT_CLIENT_MODULES } = require("../middleware/auth");
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -40,6 +40,7 @@ router.post("/register", async (req, res) => {
       password,
       role: "client",
       companyId: company._id,
+      assignedModules: DEFAULT_CLIENT_MODULES,
       isApproved: false,
       isVerified: false,
       verificationToken,
@@ -50,7 +51,7 @@ router.post("/register", async (req, res) => {
     await company.save();
 
     res.status(201).json({
-      message: "Registration successful. Awaiting admin approval.",
+      message: "Registration successful. Verify your email first, then wait for Super Admin approval before login.",
       verificationToken,
     });
   } catch (err) {
@@ -68,8 +69,15 @@ router.post("/login", async (req, res) => {
     const isMatch = await user.comparePassword(password);
     if (!isMatch) return res.status(401).json({ error: "Invalid credentials" });
 
-    if (!user.isApproved && user.role !== "superadmin")
-      return res.status(403).json({ error: "Account not approved yet. Please wait for admin approval." });
+    if (user.role !== "superadmin") {
+      if (!user.isVerified) {
+        return res.status(403).json({ error: "Please verify your email before logging in." });
+      }
+
+      if (!user.isApproved || user.companyId?.isApproved === false) {
+        return res.status(403).json({ error: "Your company is pending Super Admin approval." });
+      }
+    }
 
     const token = generateToken(user);
     res.json({

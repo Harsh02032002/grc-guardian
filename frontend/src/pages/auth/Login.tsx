@@ -6,20 +6,22 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Shield, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { getDefaultRouteForUser } from "@/lib/access";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const { login, isLoading, error } = useAuthStore();
+  const { login, isLoading } = useAuthStore();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await login(email, password);
+      const nextUser = useAuthStore.getState().user;
       toast({ title: "Login successful" });
-      navigate("/");
+      navigate(getDefaultRouteForUser(nextUser), { replace: true });
     } catch (err: any) {
       toast({ title: "Login failed", description: err.message, variant: "destructive" });
     }
@@ -35,7 +37,7 @@ export default function Login() {
             </div>
           </div>
           <h1 className="text-2xl font-bold text-foreground">GRC Guardian</h1>
-          <p className="text-sm text-muted-foreground mt-1">Sign in to your account</p>
+          <p className="text-sm text-muted-foreground mt-1">Sign in after email verification and Super Admin approval</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card rounded-xl border p-6 space-y-4 shadow-sm">
