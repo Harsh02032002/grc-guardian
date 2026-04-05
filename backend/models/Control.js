@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const controlSchema = new mongoose.Schema(
   {
     controlId: { type: String, unique: true, required: true },
+    companyId: { type: mongoose.Schema.Types.ObjectId, ref: "Company" },
     name: { type: String, required: true },
     type: { type: String, enum: ["Preventive", "Detective", "Corrective"], required: true },
     nature: { type: String, enum: ["Manual", "Automated"], required: true },

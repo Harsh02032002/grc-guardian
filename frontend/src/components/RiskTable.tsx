@@ -175,7 +175,7 @@ export function RiskTable({ searchQuery = "", onRiskSelect, onRiskEdit, onRiskVi
 
     // Apply search filter
     if (searchQuery) {
-      filtered = filtered.filter(risk => 
+      filtered = filtered.filter((risk: any) => 
         risk.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         risk.riskId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         risk.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -190,16 +190,16 @@ export function RiskTable({ searchQuery = "", onRiskSelect, onRiskEdit, onRiskVi
 
     // Apply status filter
     if (filterStatus !== 'all') {
-      filtered = filtered.filter(risk => risk.status === filterStatus);
+      filtered = filtered.filter((risk: any) => risk.status === filterStatus);
     }
 
     // Apply priority filter
     if (filterPriority !== 'all') {
-      filtered = filtered.filter(risk => risk.riskPriority === filterPriority);
+      filtered = filtered.filter((risk: any) => risk.riskPriority === filterPriority);
     }
 
     // Sort risks
-    return filtered.sort((a, b) => {
+    return filtered.sort((a: any, b: any) => {
       let aValue = a[sortField];
       let bValue = b[sortField];
 
