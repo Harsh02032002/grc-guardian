@@ -19,7 +19,8 @@ export default function Login() {
     try {
       await login(email, password);
       toast({ title: "Login successful" });
-      navigate("/");
+      const loggedInUser = useAuthStore.getState().user;
+      navigate(loggedInUser?.role === "superadmin" || loggedInUser?.role === "subadmin" ? "/admin" : "/");
     } catch (err: any) {
       toast({ title: "Login failed", description: err.message, variant: "destructive" });
     }

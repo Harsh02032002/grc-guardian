@@ -124,8 +124,8 @@ export function GRCSidebar() {
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {/* Admin Panel link for superadmin */}
-        {user?.role === "superadmin" && (
+        {/* Admin Panel link for admin users */}
+        {(user?.role === "superadmin" || user?.role === "subadmin") && (
           <NavLink
             to="/admin"
             className={({ isActive }) =>

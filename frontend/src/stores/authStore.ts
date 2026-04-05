@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 
 export interface User {
   _id: string;
@@ -18,12 +18,14 @@ interface AuthState {
   user: User | null;
   token: string | null;
   isLoading: boolean;
+  hasHydrated: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (data: any) => Promise<string>;
   logout: () => void;
   fetchMe: () => Promise<void>;
   clearError: () => void;
+  setHasHydrated: (value: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -32,6 +34,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       isLoading: false,
+      hasHydrated: false,
       error: null,
 
       login: async (email: string, password: string) => {
@@ -76,26 +79,31 @@ export const useAuthStore = create<AuthState>()(
       fetchMe: async () => {
         const token = get().token;
         if (!token) return;
+        set({ isLoading: true });
         try {
           const res = await fetch(`${API_BASE_URL}/auth/me`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (!res.ok) {
-            set({ user: null, token: null });
+            set({ user: null, token: null, isLoading: false });
             return;
           }
           const user = await res.json();
-          set({ user });
+          set({ user, isLoading: false });
         } catch {
-          set({ user: null, token: null });
+          set({ user: null, token: null, isLoading: false });
         }
       },
 
       clearError: () => set({ error: null }),
+      setHasHydrated: (value: boolean) => set({ hasHydrated: value }),
     }),
     {
       name: "grc-auth",
       partialize: (state) => ({ token: state.token, user: state.user }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

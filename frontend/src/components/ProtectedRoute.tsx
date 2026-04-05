@@ -9,7 +9,11 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requiredRole, requiredModule }: ProtectedRouteProps) {
-  const { user, token } = useAuthStore();
+  const { user, token, hasHydrated, isLoading } = useAuthStore();
+
+  if (!hasHydrated || (token && !user && isLoading)) {
+    return null;
+  }
 
   if (!token || !user) {
     return <Navigate to="/login" replace />;
