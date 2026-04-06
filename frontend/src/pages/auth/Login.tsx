@@ -20,6 +20,14 @@ export default function Login() {
     try {
       await login(email, password);
       const nextUser = useAuthStore.getState().user;
+      
+      // Block admin users from company login
+      if (nextUser?.role === "superadmin" || nextUser?.role === "subadmin") {
+        useAuthStore.getState().logout();
+        toast({ title: "Admin login alag hai", description: "Admin portal se login karo.", variant: "destructive" });
+        return;
+      }
+      
       toast({ title: "Login successful" });
       navigate(getDefaultRouteForUser(nextUser), { replace: true });
     } catch (err: any) {
@@ -37,7 +45,7 @@ export default function Login() {
             </div>
           </div>
           <h1 className="text-2xl font-bold text-foreground">GRC Guardian</h1>
-          <p className="text-sm text-muted-foreground mt-1">Sign in after email verification and Super Admin approval</p>
+          <p className="text-sm text-muted-foreground mt-1">Company Portal — Sign in to manage your GRC</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card rounded-xl border p-6 space-y-4 shadow-sm">
@@ -45,15 +53,7 @@ export default function Login() {
             <Label htmlFor="email">Email</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="email"
-                type="email"
-                placeholder="admin@company.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="pl-10"
-                required
-              />
+              <Input id="email" type="email" placeholder="you@company.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required />
             </div>
           </div>
 
@@ -61,29 +61,15 @@ export default function Login() {
             <Label htmlFor="password">Password</Label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-10 pr-10"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
+              <Input id="password" type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10 pr-10" required />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
           </div>
 
-          <div className="flex justify-end">
-            <Link to="/forgot-password" className="text-xs text-primary hover:underline">
-              Forgot password?
-            </Link>
+          <div className="flex justify-between items-center">
+            <Link to="/forgot-password" className="text-xs text-primary hover:underline">Forgot password?</Link>
           </div>
 
           <Button type="submit" className="w-full" disabled={isLoading}>
@@ -91,11 +77,15 @@ export default function Login() {
           </Button>
 
           <p className="text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
-            <Link to="/register" className="text-primary hover:underline font-medium">
-              Register your company
-            </Link>
+            New company?{" "}
+            <Link to="/register" className="text-primary hover:underline font-medium">Register here</Link>
           </p>
+
+          <div className="border-t pt-3 text-center">
+            <Link to="/admin/login" className="text-xs text-muted-foreground hover:text-primary">
+              Admin Portal Login →
+            </Link>
+          </div>
         </form>
       </div>
     </div>
