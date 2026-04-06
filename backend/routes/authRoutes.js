@@ -148,6 +148,28 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
+// POST /api/auth/set-password - Sub-admin sets password from invite link
+router.post("/set-password", async (req, res) => {
+  try {
+    const { token, password, name } = req.body;
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+    if (!user) return res.status(400).json({ error: "Invalid or expired invite link" });
+
+    user.password = password;
+    if (name) user.name = name;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.json({ message: "Password set successfully. You can now login." });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/auth/me - Get current user
 router.get("/me", authenticate, async (req, res) => {
   res.json(req.user.toJSON());

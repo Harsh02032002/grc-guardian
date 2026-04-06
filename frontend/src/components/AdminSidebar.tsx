@@ -6,22 +6,17 @@ import {
   LayoutDashboard,
   Box,
   AlertTriangle,
-  Shield,
-  FileCheck,
-  ClipboardCheck,
-  BarChart3,
-  ChevronDown,
-  ChevronRight,
   Wrench,
   Users,
   LogOut,
+  Shield,
+  ChevronDown,
+  ChevronRight,
+  UserCheck,
+  UserPlus,
 } from "lucide-react";
 
-interface SubItem {
-  title: string;
-  url: string;
-}
-
+interface SubItem { title: string; url: string }
 interface MenuItem {
   title: string;
   icon: React.ElementType;
@@ -30,81 +25,54 @@ interface MenuItem {
   subItems?: SubItem[];
 }
 
-const menuItems: MenuItem[] = [
-  { title: "Dashboard", icon: LayoutDashboard, url: "/", module: "dashboard" },
+const adminMenuItems: MenuItem[] = [
+  { title: "Dashboard", icon: LayoutDashboard, url: "/admin", module: "dashboard" },
+  { title: "Assets", icon: Box, url: "/admin/assets", module: "assets" },
+  { title: "Risks", icon: AlertTriangle, url: "/admin/risks", module: "risks" },
   {
     title: "Configuration",
     icon: Wrench,
     module: "configuration",
     subItems: [
-      { title: "Risk Owners", url: "/risk-owners" },
-      { title: "Risk Categories", url: "/risks/categories" },
-      { title: "Risk Subcategories", url: "/risks/subcategories" },
-      { title: "Asset Categories", url: "/config/asset-categories" },
-      { title: "Asset Classification", url: "/config/asset-classification" },
-      { title: "Retention Period", url: "/config/retention-period" },
-      { title: "Department", url: "/config/department" },
-      { title: "Asset ID Format", url: "/config/asset-id-format" },
-      { title: "Asset Type", url: "/config/asset-type" },
-      { title: "Location", url: "/config/location" },
-      { title: "Business Impact Guidelines", url: "/config/impact" },
-      { title: "CIA Matrix Configuration", url: "/config/cia-matrix" },
+      { title: "Risk Owners", url: "/admin/config/risk-owners" },
+      { title: "Risk Categories", url: "/admin/config/risk-categories" },
+      { title: "Risk Subcategories", url: "/admin/config/risk-subcategories" },
+      { title: "Asset Categories", url: "/admin/config/asset-categories" },
+      { title: "Asset Classification", url: "/admin/config/asset-classification" },
+      { title: "Retention Period", url: "/admin/config/retention-period" },
+      { title: "Department", url: "/admin/config/department" },
+      { title: "Asset ID Format", url: "/admin/config/asset-id-format" },
+      { title: "Asset Type", url: "/admin/config/asset-type" },
+      { title: "Location", url: "/admin/config/location" },
+      { title: "Business Impact", url: "/admin/config/impact" },
+      { title: "CIA Matrix", url: "/admin/config/cia-matrix" },
     ],
   },
   {
-    title: "Assets",
-    icon: Box,
-    module: "assets",
+    title: "User Management",
+    icon: Users,
+    module: "dashboard", // always visible for admins
     subItems: [
-      { title: "Asset Register", url: "/assets" },
-      { title: "Add Asset", url: "/assets/add" },
-    ],
-  },
-  {
-    title: "Risks",
-    icon: AlertTriangle,
-    module: "risks",
-    subItems: [
-      { title: "Risk Register", url: "/risks" },
-      { title: "Add Risk", url: "/risks/add" },
-      { title: "Risk Library", url: "/risks/library" },
-    ],
-  },
-  {
-    title: "Controls",
-    icon: Shield,
-    module: "controls",
-    subItems: [
-      { title: "Controls Register", url: "/controls" },
-      { title: "Add Control", url: "/controls/add" },
-    ],
-  },
-  {
-    title: "Treatments",
-    icon: FileCheck,
-    module: "treatments",
-    subItems: [
-      { title: "Treatment Register", url: "/treatments" },
-      { title: "Add Treatment Plan", url: "/treatments/add" },
+      { title: "Approve Users", url: "/admin/users/approve" },
+      { title: "Create Sub-Admin", url: "/admin/users/create-subadmin" },
     ],
   },
 ];
 
-export function GRCSidebar() {
+export function AdminSidebar() {
   const { user, logout } = useAuthStore();
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
-    "Configuration": true,
-    "Assets": true,
-    "Risks": true,
+    Configuration: true,
+    "User Management": true,
   });
 
   const toggleMenu = (title: string) => {
-    setOpenMenus((prev: Record<string, boolean>) => ({ ...prev, [title]: !prev[title] }));
+    setOpenMenus((prev) => ({ ...prev, [title]: !prev[title] }));
   };
 
-  // Filter menu items based on user role and assigned modules
-  const filteredMenuItems = menuItems.filter((item) => {
+  const filteredMenuItems = adminMenuItems.filter((item) => {
     if (!user) return false;
+    if (user.role === "superadmin") return true;
     if (!item.module) return true;
     return canAccessModule(user, item.module);
   });
@@ -116,7 +84,7 @@ export function GRCSidebar() {
           <Shield className="h-7 w-7 text-sidebar-primary" />
           <div>
             <h1 className="text-base font-bold text-sidebar-accent-foreground tracking-tight">GRC Guardian</h1>
-            <p className="text-[10px] text-sidebar-foreground">Governance · Risk · Compliance</p>
+            <p className="text-[10px] text-sidebar-foreground">Admin Portal</p>
           </div>
         </div>
       </div>
@@ -128,7 +96,7 @@ export function GRCSidebar() {
               <NavLink
                 key={item.title}
                 to={item.url}
-                end={item.url === "/"}
+                end={item.url === "/admin"}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${
                     isActive
@@ -153,11 +121,7 @@ export function GRCSidebar() {
               >
                 <item.icon className="h-4 w-4 shrink-0" />
                 <span className="flex-1 text-left">{item.title}</span>
-                {isOpen ? (
-                  <ChevronDown className="h-3.5 w-3.5" />
-                ) : (
-                  <ChevronRight className="h-3.5 w-3.5" />
-                )}
+                {isOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
               </button>
               {isOpen && item.subItems && (
                 <div className="ml-6 mt-0.5 space-y-0.5 border-l border-sidebar-border pl-3">
@@ -183,24 +147,18 @@ export function GRCSidebar() {
         })}
       </nav>
 
-      {/* User info & logout */}
       <div className="px-4 py-3 border-t border-sidebar-border">
         {user && (
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <p className="text-xs font-medium text-sidebar-accent-foreground truncate">{user.name}</p>
-              <p className="text-[10px] text-sidebar-foreground truncate">{user.role}</p>
+              <p className="text-[10px] text-sidebar-foreground truncate capitalize">{user.role}</p>
             </div>
-            <button
-              onClick={logout}
-              className="p-1.5 rounded-md text-sidebar-foreground hover:bg-sidebar-accent hover:text-destructive transition-colors"
-              title="Logout"
-            >
+            <button onClick={logout} className="p-1.5 rounded-md text-sidebar-foreground hover:bg-sidebar-accent hover:text-destructive transition-colors" title="Logout">
               <LogOut className="h-4 w-4" />
             </button>
           </div>
         )}
-        <p className="text-[10px] text-sidebar-foreground mt-2">v1.0.0 · Enterprise Edition</p>
       </div>
     </aside>
   );

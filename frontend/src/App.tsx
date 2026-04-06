@@ -4,15 +4,22 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppLayout } from "@/components/AppLayout";
+import { AdminLayout } from "@/components/AdminLayout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 // Auth Pages
 import Login from "@/pages/auth/Login";
+import AdminLogin from "@/pages/auth/AdminLogin";
 import Register from "@/pages/auth/Register";
 import ForgotPassword from "@/pages/auth/ForgotPassword";
+import SetPassword from "@/pages/auth/SetPassword";
 
 // Admin Pages
-import AdminPanel from "@/pages/admin/AdminPanel";
+import AdminDashboard from "@/pages/admin/AdminDashboard";
+import AdminAssets from "@/pages/admin/AdminAssets";
+import AdminRisks from "@/pages/admin/AdminRisks";
+import AdminApproveUsers from "@/pages/admin/AdminApproveUsers";
+import AdminCreateSubAdmin from "@/pages/admin/AdminCreateSubAdmin";
 
 // App Pages
 import Dashboard from "@/pages/Dashboard";
@@ -52,19 +59,37 @@ const App = () => (
         <Routes>
           {/* Public Auth Routes */}
           <Route path="/login" element={<Login />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/set-password" element={<SetPassword />} />
 
-          {/* Protected App Routes */}
+          {/* Admin Routes (superadmin + subadmin) */}
+          <Route element={<ProtectedRoute requiredRole={["superadmin", "subadmin"]}><AdminLayout /></ProtectedRoute>}>
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/assets" element={<ProtectedRoute requiredModule="assets"><AdminAssets /></ProtectedRoute>} />
+            <Route path="/admin/risks" element={<ProtectedRoute requiredModule="risks"><AdminRisks /></ProtectedRoute>} />
+            <Route path="/admin/users/approve" element={<AdminApproveUsers />} />
+            <Route path="/admin/users/create-subadmin" element={<AdminCreateSubAdmin />} />
+
+            {/* Admin Configuration - reuse same config pages */}
+            <Route path="/admin/config/asset-categories" element={<ProtectedRoute requiredModule="configuration"><AssetCategories /></ProtectedRoute>} />
+            <Route path="/admin/config/asset-classification" element={<ProtectedRoute requiredModule="configuration"><AssetClassification /></ProtectedRoute>} />
+            <Route path="/admin/config/retention-period" element={<ProtectedRoute requiredModule="configuration"><ConfigRetentionPeriod /></ProtectedRoute>} />
+            <Route path="/admin/config/department" element={<ProtectedRoute requiredModule="configuration"><ConfigDepartment /></ProtectedRoute>} />
+            <Route path="/admin/config/asset-id-format" element={<ProtectedRoute requiredModule="configuration"><ConfigAssetIdFormat /></ProtectedRoute>} />
+            <Route path="/admin/config/asset-type" element={<ProtectedRoute requiredModule="configuration"><ConfigAssetType /></ProtectedRoute>} />
+            <Route path="/admin/config/location" element={<ProtectedRoute requiredModule="configuration"><ConfigLocation /></ProtectedRoute>} />
+            <Route path="/admin/config/impact" element={<ProtectedRoute requiredModule="configuration"><BusinessImpact /></ProtectedRoute>} />
+            <Route path="/admin/config/cia-matrix" element={<ProtectedRoute requiredModule="configuration"><CIAMatrixConfig /></ProtectedRoute>} />
+            <Route path="/admin/config/risk-owners" element={<ProtectedRoute requiredModule="configuration"><ConfigRiskOwner /></ProtectedRoute>} />
+            <Route path="/admin/config/risk-categories" element={<ProtectedRoute requiredModule="configuration"><RiskCategories /></ProtectedRoute>} />
+            <Route path="/admin/config/risk-subcategories" element={<ProtectedRoute requiredModule="configuration"><RiskSubcategories /></ProtectedRoute>} />
+          </Route>
+
+          {/* Company Client Routes */}
           <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
             <Route path="/" element={<ProtectedRoute requiredModule="dashboard"><Dashboard /></ProtectedRoute>} />
-
-            {/* Admin Panel */}
-            <Route path="/admin" element={
-              <ProtectedRoute requiredRole={["superadmin"]}>
-                <AdminPanel />
-              </ProtectedRoute>
-            } />
 
             {/* Configuration */}
             <Route path="/config/asset-categories" element={<ProtectedRoute requiredModule="configuration"><AssetCategories /></ProtectedRoute>} />
@@ -100,8 +125,8 @@ const App = () => (
             <Route path="/treatments/add" element={<ProtectedRoute requiredModule="treatments"><AddTreatment /></ProtectedRoute>} />
 
             {/* Audit & Reports */}
-            <Route path="/audit" element={<ProtectedRoute requiredRole={["superadmin"]}><AuditVersionControl /></ProtectedRoute>} />
-            <Route path="/reports" element={<ProtectedRoute requiredRole={["superadmin"]}><Reports /></ProtectedRoute>} />
+            <Route path="/audit" element={<AuditVersionControl />} />
+            <Route path="/reports" element={<Reports />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

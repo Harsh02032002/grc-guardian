@@ -1,7 +1,12 @@
 const express = require("express");
 const router = express.Router();
+const crypto = require("crypto");
 const User = require("../models/User");
 const Company = require("../models/Company");
+const Asset = require("../models/Asset");
+const Risk = require("../models/Risk");
+const Control = require("../models/Control");
+const Treatment = require("../models/Treatment");
 const { authenticate, authorize } = require("../middleware/auth");
 
 // All admin routes require authentication + superadmin or subadmin role
@@ -72,28 +77,57 @@ router.get("/users", authorize("superadmin", "subadmin"), async (req, res) => {
   }
 });
 
-// POST create sub-admin (superadmin only)
+// PATCH approve/reject user
+router.patch("/users/:id/approve", authorize("superadmin"), async (req, res) => {
+  try {
+    const { isApproved } = req.body;
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { isApproved },
+      { new: true }
+    ).populate("companyId", "name");
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json({ message: `User ${isApproved ? "approved" : "rejected"}`, user: user.toJSON() });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST create sub-admin (superadmin only) - email invite flow
 router.post("/users/create-subadmin", authorize("superadmin"), async (req, res) => {
   try {
-    const { name, email, password, companyId, assignedModules } = req.body;
+    const { email, companyId, assignedModules } = req.body;
 
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ error: "Email already exists" });
 
+    // Generate a set-password token
+    const setPasswordToken = crypto.randomBytes(32).toString("hex");
+    const setPasswordExpires = Date.now() + 7 * 24 * 3600000; // 7 days
+
     const user = new User({
-      name,
+      name: email.split("@")[0], // temporary name from email
       email,
-      password,
+      password: crypto.randomBytes(16).toString("hex"), // random placeholder password
       role: "subadmin",
       companyId,
       assignedModules: assignedModules || [],
       isApproved: true,
       isVerified: true,
       emailVerifiedAt: new Date(),
+      resetPasswordToken: setPasswordToken,
+      resetPasswordExpires: setPasswordExpires,
     });
     await user.save();
 
-    res.status(201).json(user.toJSON());
+    // In production, send email with link: /set-password?token=setPasswordToken
+    // For now, return the token
+    res.status(201).json({
+      message: "Sub-Admin invite sent. They need to set their password.",
+      user: user.toJSON(),
+      setPasswordToken,
+      setPasswordLink: `/set-password?token=${setPasswordToken}`,
+    });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -137,20 +171,91 @@ router.delete("/users/:id", authorize("superadmin"), async (req, res) => {
   }
 });
 
+// ========== ASSETS BY COMPANY ==========
+router.get("/assets", authorize("superadmin", "subadmin"), async (req, res) => {
+  try {
+    let filter = {};
+    if (req.user.role === "subadmin") {
+      filter.companyId = req.user.companyId;
+    }
+    if (req.query.companyId) {
+      filter.companyId = req.query.companyId;
+    }
+    const assets = await Asset.find(filter).sort({ createdAt: -1 });
+    res.json(assets);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT update asset from admin
+router.put("/assets/:id", authorize("superadmin"), async (req, res) => {
+  try {
+    const asset = await Asset.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!asset) return res.status(404).json({ error: "Asset not found" });
+    res.json(asset);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// DELETE asset from admin
+router.delete("/assets/:id", authorize("superadmin"), async (req, res) => {
+  try {
+    await Asset.findByIdAndDelete(req.params.id);
+    res.json({ message: "Asset deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ========== RISKS BY COMPANY ==========
+router.get("/risks", authorize("superadmin", "subadmin"), async (req, res) => {
+  try {
+    let filter = {};
+    if (req.user.role === "subadmin") {
+      filter.companyId = req.user.companyId;
+    }
+    if (req.query.companyId) {
+      filter.companyId = req.query.companyId;
+    }
+    const risks = await Risk.find(filter).sort({ createdAt: -1 });
+    res.json(risks);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT update risk from admin
+router.put("/risks/:id", authorize("superadmin"), async (req, res) => {
+  try {
+    const risk = await Risk.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!risk) return res.status(404).json({ error: "Risk not found" });
+    res.json(risk);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// DELETE risk from admin
+router.delete("/risks/:id", authorize("superadmin"), async (req, res) => {
+  try {
+    await Risk.findByIdAndDelete(req.params.id);
+    res.json({ message: "Risk deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ========== DASHBOARD STATS (Super Admin) ==========
 router.get("/stats", authorize("superadmin", "subadmin"), async (req, res) => {
   try {
-    const Asset = require("../models/Asset");
-    const Risk = require("../models/Risk");
-    const Control = require("../models/Control");
-    const Treatment = require("../models/Treatment");
-
     let filter = {};
     if (req.user.role === "subadmin") {
       filter.companyId = req.user.companyId;
     }
 
-    const [totalCompanies, totalUsers, totalAssets, totalRisks, totalControls, totalTreatments, pendingCompanies] =
+    const [totalCompanies, totalUsers, totalAssets, totalRisks, totalControls, totalTreatments, pendingCompanies, pendingUsers] =
       await Promise.all([
         Company.countDocuments(),
         User.countDocuments(filter),
@@ -159,6 +264,7 @@ router.get("/stats", authorize("superadmin", "subadmin"), async (req, res) => {
         Control.countDocuments(filter),
         Treatment.countDocuments(filter),
         Company.countDocuments({ isApproved: false }),
+        User.countDocuments({ isApproved: false, role: { $ne: "superadmin" } }),
       ]);
 
     res.json({
@@ -169,6 +275,7 @@ router.get("/stats", authorize("superadmin", "subadmin"), async (req, res) => {
       totalControls,
       totalTreatments,
       pendingCompanies,
+      pendingUsers,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
