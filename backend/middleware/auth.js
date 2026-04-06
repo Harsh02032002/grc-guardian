@@ -15,10 +15,6 @@ const authenticate = async (req, res, next) => {
     if (!user) return res.status(401).json({ error: "User not found" });
 
     if (user.role !== "superadmin") {
-      if (!user.isVerified) {
-        return res.status(403).json({ error: "Please verify your email before continuing" });
-      }
-
       if (!user.isApproved || user.companyId?.isApproved === false) {
         return res.status(403).json({ error: "Your company is pending Super Admin approval" });
       }

@@ -50,7 +50,7 @@ export default function Register() {
             </div>
           </div>
           <h1 className="text-2xl font-bold text-foreground">Register Company</h1>
-          <p className="text-sm text-muted-foreground mt-1">Register your company, verify email, then wait for Super Admin approval</p>
+          <p className="text-sm text-muted-foreground mt-1">Register your company and wait for Super Admin approval</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card rounded-xl border p-6 space-y-4 shadow-sm">

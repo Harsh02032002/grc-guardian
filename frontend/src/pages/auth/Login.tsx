@@ -37,7 +37,7 @@ export default function Login() {
             </div>
           </div>
           <h1 className="text-2xl font-bold text-foreground">GRC Guardian</h1>
-          <p className="text-sm text-muted-foreground mt-1">Sign in after email verification and Super Admin approval</p>
+          <p className="text-sm text-muted-foreground mt-1">Sign in after Super Admin approval</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-card rounded-xl border p-6 space-y-4 shadow-sm">

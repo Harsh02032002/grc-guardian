@@ -11,12 +11,11 @@ import { Building2, Users, Shield, CheckCircle, XCircle, Plus, Trash2, Settings 
 import { toast } from "@/hooks/use-toast";
 import { MODULE_OPTIONS } from "@/lib/access";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function AdminPanel() {
   const { user } = useAuthStore();
-  const isSuperAdmin = user?.role === "superadmin";
-  const [tab, setTab] = useState<"companies" | "users">(isSuperAdmin ? "companies" : "users");
+  const [tab, setTab] = useState<"companies" | "users">("companies");
   const [companies, setCompanies] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({});
@@ -32,35 +31,18 @@ export default function AdminPanel() {
   const fetchData = async () => {
     const headers = { ...getAuthHeaders(), "Content-Type": "application/json" };
     try {
-      const requests = [
+      const [compRes, userRes, statRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/admin/companies`, { headers }),
         fetch(`${API_BASE_URL}/admin/users`, { headers }),
         fetch(`${API_BASE_URL}/admin/stats`, { headers }),
-      ];
-
-      if (isSuperAdmin) {
-        requests.unshift(fetch(`${API_BASE_URL}/admin/companies`, { headers }));
-      }
-
-      const responses = await Promise.all(requests);
-
-      if (isSuperAdmin) {
-        const [compRes, userRes, statRes] = responses;
-        if (compRes.ok) setCompanies(await compRes.json());
-        if (userRes.ok) setUsers(await userRes.json());
-        if (statRes.ok) setStats(await statRes.json());
-      } else {
-        const [userRes, statRes] = responses;
-        setCompanies([]);
-        if (userRes.ok) setUsers(await userRes.json());
-        if (statRes.ok) setStats(await statRes.json());
-      }
+      ]);
+      if (compRes.ok) setCompanies(await compRes.json());
+      if (userRes.ok) setUsers(await userRes.json());
+      if (statRes.ok) setStats(await statRes.json());
     } catch { /* ignore */ }
   };
 
-  useEffect(() => {
-    setTab(isSuperAdmin ? "companies" : "users");
-    fetchData();
-  }, [isSuperAdmin]);
+  useEffect(() => { fetchData(); }, []);
 
   const approveCompany = async (id: string, isApproved: boolean) => {
     await fetch(`${API_BASE_URL}/admin/companies/${id}/approve`, {
@@ -145,19 +127,6 @@ export default function AdminPanel() {
           <h1 className="page-title">Admin Panel</h1>
           <p className="page-subtitle">Manage companies, users & permissions</p>
         </div>
-<<<<<<< HEAD
-        {isSuperAdmin && (
-          <Dialog open={showCreateSubAdmin} onOpenChange={setShowCreateSubAdmin}>
-            <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" />Create Sub-Admin</Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader><DialogTitle>Create Sub-Admin</DialogTitle></DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-1">
-                  <Label>Name</Label>
-                  <Input value={subAdminForm.name} onChange={(e) => setSubAdminForm({ ...subAdminForm, name: e.target.value })} />
-=======
         <Dialog open={showCreateSubAdmin} onOpenChange={setShowCreateSubAdmin}>
           <DialogTrigger asChild>
             <Button><Plus className="h-4 w-4 mr-2" />Create Sub-Admin</Button>
@@ -200,46 +169,12 @@ export default function AdminPanel() {
                       {mod.label}
                     </label>
                   ))}
->>>>>>> 7cd9556b387e7761f6b507fc67e66581ff86b5d9
                 </div>
-                <div className="space-y-1">
-                  <Label>Email</Label>
-                  <Input type="email" value={subAdminForm.email} onChange={(e) => setSubAdminForm({ ...subAdminForm, email: e.target.value })} />
-                </div>
-                <div className="space-y-1">
-                  <Label>Password</Label>
-                  <Input type="password" value={subAdminForm.password} onChange={(e) => setSubAdminForm({ ...subAdminForm, password: e.target.value })} />
-                </div>
-                <div className="space-y-1">
-                  <Label>Assign Company</Label>
-                  <Select value={subAdminForm.companyId} onValueChange={(v) => setSubAdminForm({ ...subAdminForm, companyId: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select company" /></SelectTrigger>
-                    <SelectContent>
-                      {companies.filter((c) => c.isApproved).map((c) => (
-                        <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Assign Modules</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {ALL_MODULES.map((mod) => (
-                      <label key={mod.key} className="flex items-center gap-2 text-sm cursor-pointer p-2 rounded-md hover:bg-muted">
-                        <Checkbox
-                          checked={subAdminForm.assignedModules.includes(mod.key)}
-                          onCheckedChange={() => toggleModule(mod.key)}
-                        />
-                        {mod.label}
-                      </label>
-                    ))}
-                  </div>
-                </div>
-                <Button onClick={createSubAdmin} className="w-full">Create Sub-Admin</Button>
               </div>
-            </DialogContent>
-          </Dialog>
-        )}
+              <Button onClick={createSubAdmin} className="w-full">Create Sub-Admin</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Stats */}
@@ -262,18 +197,16 @@ export default function AdminPanel() {
 
       {/* Tabs */}
       <div className="flex gap-2 border-b">
-        {isSuperAdmin && (
-          <button onClick={() => setTab("companies")} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "companies" ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>
-            <Building2 className="h-4 w-4 inline mr-2" />Companies
-          </button>
-        )}
+        <button onClick={() => setTab("companies")} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "companies" ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>
+          <Building2 className="h-4 w-4 inline mr-2" />Companies
+        </button>
         <button onClick={() => setTab("users")} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "users" ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>
           <Users className="h-4 w-4 inline mr-2" />Users
         </button>
       </div>
 
       {/* Companies Tab */}
-      {isSuperAdmin && tab === "companies" && (
+      {tab === "companies" && (
         <div className="stat-card">
           <table className="data-table">
             <thead>
