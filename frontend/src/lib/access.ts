@@ -28,7 +28,7 @@ export const canAccessModule = (user: User | null | undefined, moduleKey?: strin
 
 export const getDefaultRouteForUser = (user: User | null | undefined) => {
   if (!user) return "/login";
-  if (user.role === "superadmin") return "/admin";
+  if (user.role === "superadmin" || user.role === "subadmin") return "/admin";
 
   const allowedModules = getUserAllowedModules(user);
   if (allowedModules.includes("all") || allowedModules.includes("dashboard")) {
