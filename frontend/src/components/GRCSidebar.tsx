@@ -122,23 +122,6 @@ export function GRCSidebar() {
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {/* Admin Panel link for superadmin */}
-        {user?.role === "superadmin" && (
-          <NavLink
-            to="/admin"
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${
-                isActive
-                  ? "bg-sidebar-accent text-sidebar-primary font-medium"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              }`
-            }
-          >
-            <Users className="h-4 w-4 shrink-0" />
-            <span>Admin Panel</span>
-          </NavLink>
-        )}
-
         {filteredMenuItems.map((item) => {
           if (item.url) {
             return (
