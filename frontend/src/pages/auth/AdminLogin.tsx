@@ -36,11 +36,30 @@ export default function AdminLogin() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="h-14 w-14 rounded-xl bg-primary flex items-center justify-center">
-              <Shield className="h-8 w-8 text-primary-foreground" />
+            <div className="flex items-center justify-center">
+              
+          <img 
+
+            src="/logo.png" 
+
+            alt="ezRisk Management" 
+
+            className="h-10 w-auto"
+
+            onError={(e) => {
+
+              // Fallback if logo.png doesn't exist yet
+
+              const target = e.target as HTMLImageElement;
+
+              target.style.display = 'none';
+
+            }}
+
+          />
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-foreground">GRC Guardian</h1>
+          
           <p className="text-sm text-muted-foreground mt-1">Admin Portal</p>
         </div>
 

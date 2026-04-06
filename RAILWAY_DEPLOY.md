@@ -1,4 +1,4 @@
-# GRC Guardian - Railway Deployment Guide
+# EzRiskManagement - Railway Deployment Guide
 
 ## 🚀 Quick Deploy Instructions
 

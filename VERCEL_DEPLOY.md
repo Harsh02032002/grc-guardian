@@ -1,4 +1,4 @@
-# GRC Guardian - Vercel Deployment Guide
+# EzRiskManagement - Vercel Deployment Guide
 
 ## 🚀 Quick Deploy Instructions
 

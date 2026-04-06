@@ -1,14 +1,57 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useCreateAsset, useConfig } from "@/hooks/useApi";
 import { masterAssetCategories, masterAssetTypes, masterDepartments, masterLocations, masterRetentionPeriods, masterAssetClassifications } from "@/data/masterData";
 
+// Required field indicator component
+const RequiredLabel = ({ children }: { children: React.ReactNode }) => (
+  <Label className="flex items-center gap-1">
+    {children}
+    <span className="text-red-500">*</span>
+  </Label>
+);
+
+// Error message component
+const FieldError = ({ message }: { message: string }) => (
+  <p className="text-xs text-red-500 mt-1">{message}</p>
+);
+
 export default function AddAsset() {
+  const navigate = useNavigate();
+  const createAsset = useCreateAsset();
+  const { data: apiLocations = [] } = useConfig("location");
+
+  // State for form fields
+  const [formData, setFormData] = useState({
+    assetName: "",
+    category: "",
+    assetType: "",
+    assetClassification: "",
+    assetGroup: "",
+    assetGroupNo: "",
+    description: "",
+    department: "",
+    location: "",
+    businessCriticality: "",
+    owner: "",
+    custodian: "",
+    retentionPeriod: "",
+    reviewDueDate: "",
+    entryBy: "",
+    reviewer: "",
+    reviewDate: "",
+    status: "Active",
+  });
+
   const [c, setC] = useState(1);
   const [i, setI] = useState(1);
   const [a, setA] = useState(1);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const assetValue = Math.max(c, i, a);
   const assetScore = c + i + a;
@@ -16,6 +59,99 @@ export default function AddAsset() {
 
   const today = new Date().toISOString().split("T")[0];
   const generatedAssetId = `AST-${String(Math.floor(Math.random() * 9000) + 1000).padStart(4, "0")}`;
+
+  // Merge master data with API locations
+  const locations = apiLocations.length > 0 ? apiLocations : masterLocations;
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: "" }));
+    }
+  };
+
+  const handleBlur = (field: string) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    validateField(field, formData[field as keyof typeof formData]);
+  };
+
+  const validateField = (field: string, value: string) => {
+    const requiredFields = ["assetName", "category", "assetType", "owner"];
+    if (requiredFields.includes(field) && !value.trim()) {
+      setErrors(prev => ({ ...prev, [field]: `${field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} req hai` }));
+      return false;
+    }
+    return true;
+  };
+
+  const validateForm = () => {
+    const requiredFields = ["assetName", "category", "assetType", "owner"];
+    const newErrors: Record<string, string> = {};
+    let isValid = true;
+
+    requiredFields.forEach(field => {
+      const value = formData[field as keyof typeof formData];
+      if (!value.trim()) {
+        newErrors[field] = `${field.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} req hai`;
+        isValid = false;
+      }
+    });
+
+    setErrors(newErrors);
+    setTouched({
+      assetName: true,
+      category: true,
+      assetType: true,
+      owner: true,
+    });
+
+    return isValid;
+  };
+
+  const handleSave = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    const assetData = {
+      assetId: generatedAssetId,
+      name: formData.assetName,
+      category: formData.category,
+      assetType: formData.assetType,
+      classification: formData.assetClassification,
+      group: formData.assetGroup,
+      description: formData.description,
+      department: formData.department,
+      location: formData.location,
+      businessCriticality: formData.businessCriticality,
+      c,
+      i,
+      a,
+      assetValue,
+      assetScore,
+      assetRanking,
+      owner: formData.owner,
+      custodian: formData.custodian,
+      retentionPeriod: formData.retentionPeriod,
+      reviewDueDate: formData.reviewDueDate,
+      entryBy: formData.entryBy,
+      reviewer: formData.reviewer,
+      reviewDate: formData.reviewDate,
+      status: formData.status,
+    };
+
+    try {
+      await createAsset.mutateAsync(assetData);
+      navigate("/assets");
+    } catch (error) {
+      console.error("Failed to create asset:", error);
+    }
+  };
+
+  const handleCancel = () => {
+    navigate("/assets");
+  };
 
   return (
     <div className="page-container max-w-4xl">
@@ -37,8 +173,11 @@ export default function AddAsset() {
             <Input value={generatedAssetId} disabled className="bg-muted/50 font-mono" />
           </div>
           <div className="space-y-1.5">
-            <Label>Status</Label>
-            <Select defaultValue="Active">
+            <RequiredLabel>Status</RequiredLabel>
+            <Select 
+              value={formData.status} 
+              onValueChange={(value) => handleInputChange("status", value)}
+            >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {["Active", "Inactive", "Decommissioned"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
@@ -51,30 +190,54 @@ export default function AddAsset() {
         <div className="modal-section-title">Basic Information</div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label>Asset Name *</Label>
-            <Input placeholder="Enter asset name or select from master" />
+            <RequiredLabel>Asset Name</RequiredLabel>
+            <Input 
+              placeholder="Enter asset name or select from master" 
+              value={formData.assetName}
+              onChange={(e) => handleInputChange("assetName", e.target.value)}
+              onBlur={() => handleBlur("assetName")}
+              className={errors.assetName && touched.assetName ? "border-red-500" : ""}
+            />
+            {errors.assetName && touched.assetName && <FieldError message={errors.assetName} />}
           </div>
           <div className="space-y-1.5">
-            <Label>Category (Master) *</Label>
-            <Select>
-              <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+            <RequiredLabel>Category </RequiredLabel>
+            <Select 
+              value={formData.category}
+              onValueChange={(value) => handleInputChange("category", value)}
+              onOpenChange={() => handleBlur("category")}
+            >
+              <SelectTrigger className={errors.category && touched.category ? "border-red-500" : ""}>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
               <SelectContent>
                 {masterAssetCategories.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
               </SelectContent>
             </Select>
+            {errors.category && touched.category && <FieldError message={errors.category} />}
           </div>
           <div className="space-y-1.5">
-            <Label>Asset Type (Master) *</Label>
-            <Select>
-              <SelectTrigger><SelectValue placeholder="Select asset type" /></SelectTrigger>
+            <RequiredLabel>Asset Type </RequiredLabel>
+            <Select 
+              value={formData.assetType}
+              onValueChange={(value) => handleInputChange("assetType", value)}
+              onOpenChange={() => handleBlur("assetType")}
+            >
+              <SelectTrigger className={errors.assetType && touched.assetType ? "border-red-500" : ""}>
+                <SelectValue placeholder="Select asset type" />
+              </SelectTrigger>
               <SelectContent>
                 {masterAssetTypes.map(t => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}
               </SelectContent>
             </Select>
+            {errors.assetType && touched.assetType && <FieldError message={errors.assetType} />}
           </div>
           <div className="space-y-1.5">
             <Label>Asset Classification</Label>
-            <Select>
+            <Select 
+              value={formData.assetClassification}
+              onValueChange={(value) => handleInputChange("assetClassification", value)}
+            >
               <SelectTrigger><SelectValue placeholder="Select classification" /></SelectTrigger>
               <SelectContent>
                 {masterAssetClassifications.map(c => <SelectItem key={c.id} value={c.name}>{c.name} (Level {c.level})</SelectItem>)}
@@ -83,19 +246,35 @@ export default function AddAsset() {
           </div>
           <div className="space-y-1.5">
             <Label>Asset Group</Label>
-            <Input placeholder="e.g., Business Applications" />
+            <Input 
+              placeholder="e.g., Business Applications" 
+              value={formData.assetGroup}
+              onChange={(e) => handleInputChange("assetGroup", e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Asset Group No.</Label>
-            <Input placeholder="e.g., AG-001" />
+            <Input 
+              placeholder="e.g., AG-001" 
+              value={formData.assetGroupNo}
+              onChange={(e) => handleInputChange("assetGroupNo", e.target.value)}
+            />
           </div>
           <div className="col-span-full space-y-1.5">
             <Label>Description</Label>
-            <Textarea placeholder="Describe the asset..." rows={3} />
+            <Textarea 
+              placeholder="Describe the asset..." 
+              rows={3} 
+              value={formData.description}
+              onChange={(e) => handleInputChange("description", e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
-            <Label>Department (Master)</Label>
-            <Select>
+            <Label>Department </Label>
+            <Select 
+              value={formData.department}
+              onValueChange={(value) => handleInputChange("department", value)}
+            >
               <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
               <SelectContent>
                 {masterDepartments.map(d => <SelectItem key={d.id} value={d.name}>{d.name} ({d.code})</SelectItem>)}
@@ -103,17 +282,23 @@ export default function AddAsset() {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Location (Master)</Label>
-            <Select>
+            <Label>Location </Label>
+            <Select 
+              value={formData.location}
+              onValueChange={(value) => handleInputChange("location", value)}
+            >
               <SelectTrigger><SelectValue placeholder="Select location" /></SelectTrigger>
               <SelectContent>
-                {masterLocations.map(l => <SelectItem key={l.id} value={l.name}>{l.name}</SelectItem>)}
+                {locations.map((l: any) => <SelectItem key={l.id || l._id} value={l.name}>{l.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
             <Label>Business Criticality</Label>
-            <Select>
+            <Select 
+              value={formData.businessCriticality}
+              onValueChange={(value) => handleInputChange("businessCriticality", value)}
+            >
               <SelectTrigger><SelectValue placeholder="Select (or auto from BIA)" /></SelectTrigger>
               <SelectContent>
                 {["Low", "Medium", "High", "Critical"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
@@ -175,16 +360,30 @@ export default function AddAsset() {
         <div className="modal-section-title">Ownership & Review</div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label>Owner *</Label>
-            <Input placeholder="Enter owner name" />
+            <RequiredLabel>Owner</RequiredLabel>
+            <Input 
+              placeholder="Enter owner name" 
+              value={formData.owner}
+              onChange={(e) => handleInputChange("owner", e.target.value)}
+              onBlur={() => handleBlur("owner")}
+              className={errors.owner && touched.owner ? "border-red-500" : ""}
+            />
+            {errors.owner && touched.owner && <FieldError message={errors.owner} />}
           </div>
           <div className="space-y-1.5">
             <Label>Custodian</Label>
-            <Input placeholder="Enter custodian name" />
+            <Input 
+              placeholder="Enter custodian name" 
+              value={formData.custodian}
+              onChange={(e) => handleInputChange("custodian", e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
-            <Label>Retention Period (Master)</Label>
-            <Select>
+            <Label>Retention Period </Label>
+            <Select 
+              value={formData.retentionPeriod}
+              onValueChange={(value) => handleInputChange("retentionPeriod", value)}
+            >
               <SelectTrigger><SelectValue placeholder="Select retention period" /></SelectTrigger>
               <SelectContent>
                 {masterRetentionPeriods.map(r => <SelectItem key={r.id} value={r.name}>{r.name} — {r.description}</SelectItem>)}
@@ -193,27 +392,50 @@ export default function AddAsset() {
           </div>
           <div className="space-y-1.5">
             <Label>Register Review Due On</Label>
-            <Input type="date" />
+            <Input 
+              type="date" 
+              value={formData.reviewDueDate}
+              onChange={(e) => handleInputChange("reviewDueDate", e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Name of Person Making Entry</Label>
-            <Input placeholder="Enter name" />
+            <Input 
+              placeholder="Enter name" 
+              value={formData.entryBy}
+              onChange={(e) => handleInputChange("entryBy", e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Name of Reviewer</Label>
-            <Input placeholder="Enter reviewer name" />
+            <Input 
+              placeholder="Enter reviewer name" 
+              value={formData.reviewer}
+              onChange={(e) => handleInputChange("reviewer", e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Date of Review</Label>
-            <Input type="date" />
+            <Input 
+              type="date" 
+              value={formData.reviewDate}
+              onChange={(e) => handleInputChange("reviewDate", e.target.value)}
+            />
           </div>
         </div>
 
         <div className="flex gap-3 pt-4 border-t">
-          <button className="px-6 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition">
-            Save Asset
+          <button 
+            onClick={handleSave}
+            disabled={createAsset.isPending}
+            className="px-6 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition disabled:opacity-50"
+          >
+            {createAsset.isPending ? "Saving..." : "Save Asset"}
           </button>
-          <button className="px-6 py-2.5 rounded-md border text-sm font-medium hover:bg-muted transition">
+          <button 
+            onClick={handleCancel}
+            className="px-6 py-2.5 rounded-md border text-sm font-medium hover:bg-muted transition"
+          >
             Cancel
           </button>
         </div>

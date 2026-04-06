@@ -69,7 +69,7 @@ export default function SetPassword() {
               <Shield className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Welcome to GRC Guardian</h1>
+          <h1 className="text-2xl font-bold text-foreground">Welcome to EzRiskManagement</h1>
           <p className="text-sm text-muted-foreground mt-1">You've been invited as a Sub-Admin. Set your name and password to get started.</p>
         </div>
 

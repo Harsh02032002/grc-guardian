@@ -1,7 +1,7 @@
 #!/bin/bash
 # Railway deployment script for frontend
 
-echo "🚀 Starting Railway deployment for GRC Guardian Frontend..."
+echo "🚀 Starting Railway deployment for EzRiskManagement Frontend..."
 
 # Check if railway CLI is installed
 if ! command -v railway &> /dev/null; then
