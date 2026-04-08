@@ -84,8 +84,7 @@ export default function Login() {
 
             <div className=" flex items-center justify-center">
 
-            
-              
+                 
           <img 
 
             src="/logo.png" 
@@ -105,7 +104,10 @@ export default function Login() {
             }}
 
           />
-            
+
+            </div>
+
+          </div>
 
           
 
