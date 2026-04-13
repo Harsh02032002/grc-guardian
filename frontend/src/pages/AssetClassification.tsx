@@ -1,4 +1,7 @@
+import { useState } from "react";
 import { assets } from "@/data/mockData";
+import { Button } from "@/components/ui/button";
+import { Shield } from "lucide-react";
 
 const getBgColor = (val: number) => {
   if (val === 4) return "bg-destructive/20 text-destructive";
@@ -10,9 +13,14 @@ const getBgColor = (val: number) => {
 export default function AssetClassification() {
   return (
     <div className="page-container">
-      <div>
-        <h1 className="page-title">Asset Classification (CIA View)</h1>
-        <p className="page-subtitle">Confidentiality, Integrity, and Availability assessment</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="page-title">Asset Classification (CIA View)</h1>
+          <p className="page-subtitle">Confidentiality, Integrity, and Availability assessment</p>
+        </div>
+        <Button className="flex items-center gap-2">
+          <Shield className="h-4 w-4" /> Classify Assets
+        </Button>
       </div>
 
       <div className="overflow-x-auto">

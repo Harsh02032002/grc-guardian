@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,18 @@ export default function SetPassword() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [userInfo, setUserInfo] = useState<any>(null);
+
+  // Fetch user info from token on mount
+  useEffect(() => {
+    if (!token) return;
+    fetch(`${API_BASE_URL}/auth/verify-token?token=${token}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.user) setUserInfo(data.user);
+      })
+      .catch(() => {}); // Silent fail, will show invalid link
+  }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,7 +53,27 @@ export default function SetPassword() {
       if (!res.ok) throw new Error(data.error);
 
       toast({ title: "Password set successfully!", description: "You can now login with your credentials." });
-      navigate("/admin/login", { replace: true });
+      
+      // Determine redirect based on user type
+      let redirectPath = "/admin/login"; // default
+      if (userInfo) {
+        const { userType, role } = userInfo;
+        if (userType === "osa" && role === "subadmin") {
+          redirectPath = "/osa/subadmin/login";
+        } else if (userType === "client" && role === "subadmin") {
+          redirectPath = "/company/subadmin/login";
+        } else if (userType === "osa" && role === "superadmin") {
+          redirectPath = "/osa/superadmin/login";
+        } else if (userType === "client" && role === "superadmin") {
+          redirectPath = "/company/superadmin/login";
+        } else if (userType === "client" && role === "client") {
+          redirectPath = "/company/user/login";
+        } else if (userType === "osa" && role === "client") {
+          redirectPath = "/osa/user/login";
+        }
+      }
+      
+      navigate(redirectPath, { replace: true });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {

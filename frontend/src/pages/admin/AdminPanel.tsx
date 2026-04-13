@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-import { Building2, Users, Shield, CheckCircle, XCircle, Plus, Trash2, Settings } from "lucide-react";
+import { Building2, Users, Shield, CheckCircle, XCircle, Plus, Trash2, Settings, Edit } from "lucide-react";
 
 import { toast } from "@/hooks/use-toast";
 
@@ -49,6 +49,8 @@ export default function AdminPanel() {
     email: "",
 
     password: "",
+
+    userType: "client" as "osa" | "client",
 
     companyId: "",
 
@@ -132,9 +134,11 @@ export default function AdminPanel() {
 
   const createSubAdmin = async () => {
 
-    if (!subAdminForm.companyId) {
+    // Company sub-admin ke liye company required hai, OSA ke liye nahi
 
-      toast({ title: "Select company", description: "Sub-admin ko company assign karna zaroori hai.", variant: "destructive" });
+    if (subAdminForm.userType === "client" && !subAdminForm.companyId) {
+
+      toast({ title: "Select company", description: "Company Sub-admin ko company assign karna zaroori hai.", variant: "destructive" });
 
       return;
 
@@ -149,8 +153,6 @@ export default function AdminPanel() {
       return;
 
     }
-
-
 
     try {
 
@@ -170,7 +172,7 @@ export default function AdminPanel() {
 
       setShowCreateSubAdmin(false);
 
-      setSubAdminForm({ name: "", email: "", password: "", companyId: "", assignedModules: [] });
+      setSubAdminForm({ name: "", email: "", password: "", userType: "client", companyId: "", assignedModules: [] });
 
       fetchData();
 
@@ -296,25 +298,49 @@ export default function AdminPanel() {
 
               <div className="space-y-1">
 
-                <Label>Assign Company</Label>
+                <Label>User Type</Label>
 
-                <Select value={subAdminForm.companyId} onValueChange={(v) => setSubAdminForm({ ...subAdminForm, companyId: v })}>
+                <Select value={subAdminForm.userType} onValueChange={(v: "osa" | "client") => setSubAdminForm({ ...subAdminForm, userType: v, companyId: v === "osa" ? "" : subAdminForm.companyId })}>
 
-                  <SelectTrigger><SelectValue placeholder="Select company" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select user type" /></SelectTrigger>
 
                   <SelectContent>
 
-                    {companies.filter((c) => c.isApproved).map((c) => (
+                    <SelectItem value="osa">OSA Sub Admin (Internal)</SelectItem>
 
-                      <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>
-
-                    ))}
+                    <SelectItem value="client">Company Sub Admin (Client)</SelectItem>
 
                   </SelectContent>
 
                 </Select>
 
               </div>
+
+              {subAdminForm.userType === "client" && (
+
+                <div className="space-y-1">
+
+                  <Label>Assign Company</Label>
+
+                  <Select value={subAdminForm.companyId} onValueChange={(v) => setSubAdminForm({ ...subAdminForm, companyId: v })}>
+
+                    <SelectTrigger><SelectValue placeholder="Select company" /></SelectTrigger>
+
+                    <SelectContent>
+
+                      {companies.filter((c) => c.isApproved).map((c) => (
+
+                        <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>
+
+                      ))}
+
+                    </SelectContent>
+
+                  </Select>
+
+                </div>
+
+              )}
 
               <div className="space-y-2">
 
@@ -394,20 +420,23 @@ export default function AdminPanel() {
 
       {/* Tabs */}
 
-      <div className="flex gap-2 border-b">
-
-        <button onClick={() => setTab("companies")} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "companies" ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>
-
-          <Building2 className="h-4 w-4 inline mr-2" />Companies
-
-        </button>
-
-        <button onClick={() => setTab("users")} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "users" ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>
-
-          <Users className="h-4 w-4 inline mr-2" />Users
-
-        </button>
-
+      <div className="flex items-center justify-between border-b">
+        <div className="flex gap-2">
+          <button onClick={() => setTab("companies")} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "companies" ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>
+            <Building2 className="h-4 w-4 inline mr-2" />Companies
+          </button>
+          <button onClick={() => setTab("users")} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "users" ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}>
+            <Users className="h-4 w-4 inline mr-2" />Users
+          </button>
+        </div>
+        <div className="pb-2">
+          {tab === "companies" && (
+            <Button size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" /> Add Company</Button>
+          )}
+          {tab === "users" && (
+            <Button size="sm" variant="outline"><Plus className="h-4 w-4 mr-1" /> Add User</Button>
+          )}
+        </div>
       </div>
 
 

@@ -11,12 +11,13 @@ export default function ConfigAssetIdFormat() {
   const [newPrefix, setNewPrefix] = useState("");
   const [newFormat, setNewFormat] = useState("");
   const [newExample, setNewExample] = useState("");
+  const [newStartingNumber, setNewStartingNumber] = useState("1");
   const [newDesc, setNewDesc] = useState("");
 
   const handleAdd = () => {
     if (!newPrefix.trim()) return;
-    setItems([...items, { id: items.length + 1, prefix: newPrefix, format: newFormat, example: newExample, description: newDesc }]);
-    setNewPrefix(""); setNewFormat(""); setNewExample(""); setNewDesc(""); setShowAdd(false);
+    setItems([...items, { id: items.length + 1, prefix: newPrefix, format: newFormat, example: newExample, startingNumber: newStartingNumber, description: newDesc } as any]);
+    setNewPrefix(""); setNewFormat(""); setNewExample(""); setNewStartingNumber("1"); setNewDesc(""); setShowAdd(false);
   };
 
   return (
@@ -37,6 +38,7 @@ export default function ConfigAssetIdFormat() {
             <div className="space-y-1.5"><Label>Prefix *</Label><Input value={newPrefix} onChange={e => setNewPrefix(e.target.value)} placeholder="e.g., AST" /></div>
             <div className="space-y-1.5"><Label>Format</Label><Input value={newFormat} onChange={e => setNewFormat(e.target.value)} placeholder="e.g., AST-XXXX" /></div>
             <div className="space-y-1.5"><Label>Example</Label><Input value={newExample} onChange={e => setNewExample(e.target.value)} placeholder="e.g., AST-0001" /></div>
+            <div className="space-y-1.5"><Label>Starting Number</Label><Input value={newStartingNumber} onChange={e => setNewStartingNumber(e.target.value)} placeholder="e.g., 1, 100, 1000" /></div>
             <div className="space-y-1.5"><Label>Description</Label><Input value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Description" /></div>
           </div>
           <div className="flex gap-2">
@@ -47,7 +49,7 @@ export default function ConfigAssetIdFormat() {
       )}
 
       <table className="data-table">
-        <thead><tr><th>#</th><th>Prefix</th><th>Format</th><th>Example</th><th>Description</th><th>Status</th><th>Actions</th></tr></thead>
+        <thead><tr><th>#</th><th>Prefix</th><th>Format</th><th>Example</th><th>Start #</th><th>Description</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody>
           {items.map((item, idx) => (
             <tr key={item.id}>
@@ -55,6 +57,7 @@ export default function ConfigAssetIdFormat() {
               <td className="font-mono font-medium">{item.prefix}</td>
               <td className="font-mono">{item.format}</td>
               <td className="font-mono text-primary">{item.example}</td>
+              <td className="font-mono text-xs">{(item as any).startingNumber || "1"}</td>
               <td className="text-muted-foreground text-xs">{item.description}</td>
               <td>
                 {activeFormat === item.id ? (

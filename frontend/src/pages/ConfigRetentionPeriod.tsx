@@ -9,12 +9,13 @@ export default function ConfigRetentionPeriod() {
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDuration, setNewDuration] = useState("");
+  const [newRegulation, setNewRegulation] = useState("");
   const [newDesc, setNewDesc] = useState("");
 
   const handleAdd = () => {
     if (!newName.trim()) return;
-    setItems([...items, { id: items.length + 1, name: newName, duration: newDuration, description: newDesc }]);
-    setNewName(""); setNewDuration(""); setNewDesc(""); setShowAdd(false);
+    setItems([...items, { id: items.length + 1, name: newName, duration: newDuration, regulation: newRegulation, description: newDesc } as any]);
+    setNewName(""); setNewDuration(""); setNewRegulation(""); setNewDesc(""); setShowAdd(false);
   };
 
   return (
@@ -34,6 +35,7 @@ export default function ConfigRetentionPeriod() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1.5"><Label>Period Name *</Label><Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g., 5 Years" /></div>
             <div className="space-y-1.5"><Label>Duration</Label><Input value={newDuration} onChange={e => setNewDuration(e.target.value)} placeholder="e.g., 5 years" /></div>
+            <div className="space-y-1.5"><Label>Regulation / Law</Label><Input value={newRegulation} onChange={e => setNewRegulation(e.target.value)} placeholder="e.g., GDPR, SOX" /></div>
             <div className="space-y-1.5"><Label>Description</Label><Input value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Description" /></div>
           </div>
           <div className="flex gap-2">
@@ -44,13 +46,14 @@ export default function ConfigRetentionPeriod() {
       )}
 
       <table className="data-table">
-        <thead><tr><th>#</th><th>Period Name</th><th>Duration</th><th>Description</th><th>Actions</th></tr></thead>
+        <thead><tr><th>#</th><th>Period Name</th><th>Duration</th><th>Regulation/Law</th><th>Description</th><th>Actions</th></tr></thead>
         <tbody>
           {items.map((item, idx) => (
             <tr key={item.id}>
               <td className="font-mono text-xs">{idx + 1}</td>
               <td className="font-medium">{item.name}</td>
               <td>{item.duration}</td>
+              <td className="text-muted-foreground text-xs">{(item as any).regulation || "-"}</td>
               <td className="text-muted-foreground text-xs">{item.description}</td>
               <td>
                 <div className="flex gap-1">

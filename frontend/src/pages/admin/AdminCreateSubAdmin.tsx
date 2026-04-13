@@ -10,17 +10,16 @@ import { Label } from "@/components/ui/label";
 
 import { Checkbox } from "@/components/ui/checkbox";
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { Badge } from "@/components/ui/badge";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-import { Settings, Copy, Check } from "lucide-react";
+import { Settings, Copy, Check,Trash2 } from "lucide-react";
 
 import { toast } from "@/hooks/use-toast";
 
-import { MODULE_OPTIONS } from "@/lib/access";
+import { OSA_MODULE_OPTIONS } from "@/lib/access";
 
 
 
@@ -30,13 +29,9 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api"
 
 export default function AdminCreateSubAdmin() {
 
-  const [companies, setCompanies] = useState<any[]>([]);
-
   const [subAdmins, setSubAdmins] = useState<any[]>([]);
 
   const [email, setEmail] = useState("");
-
-  const [companyId, setCompanyId] = useState("");
 
   const [assignedModules, setAssignedModules] = useState<string[]>([]);
 
@@ -62,15 +57,7 @@ export default function AdminCreateSubAdmin() {
 
   const fetchData = async () => {
 
-    const [compRes, userRes] = await Promise.all([
-
-      fetch(`${API_BASE_URL}/admin/companies`, { headers }),
-
-      fetch(`${API_BASE_URL}/admin/users`, { headers }),
-
-    ]);
-
-    if (compRes.ok) setCompanies(await compRes.json());
+    const userRes = await fetch(`${API_BASE_URL}/admin/users`, { headers });
 
     if (userRes.ok) {
 
@@ -98,9 +85,9 @@ export default function AdminCreateSubAdmin() {
 
   const createSubAdmin = async () => {
 
-    if (!email || !companyId) {
+    if (!email) {
 
-      toast({ title: "Email aur company select karo", variant: "destructive" });
+      toast({ title: "Email enter karo", variant: "destructive" });
 
       return;
 
@@ -124,7 +111,7 @@ export default function AdminCreateSubAdmin() {
 
         method: "POST", headers,
 
-        body: JSON.stringify({ email, companyId, assignedModules }),
+        body: JSON.stringify({ email, assignedModules, userType: "osa" }),
 
       });
 
@@ -141,8 +128,6 @@ export default function AdminCreateSubAdmin() {
       toast({ title: "Sub-Admin created!", description: "Invite link generated. Share it with the sub-admin." });
 
       setEmail("");
-
-      setCompanyId("");
 
       setAssignedModules([]);
 
@@ -194,9 +179,29 @@ export default function AdminCreateSubAdmin() {
 
   };
 
+  const deleteSubAdmin = async (userId: string) => {
 
+    if (!confirm("Delete this sub-admin?")) return;
 
-  const approvedCompanies = companies.filter(c => c.isApproved);
+    const res = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
+
+      method: "DELETE", headers,
+
+    });
+
+    if (res.ok) {
+
+      toast({ title: "Sub-admin deleted" });
+
+      fetchData();
+
+    } else {
+
+      toast({ title: "Failed to delete", variant: "destructive" });
+
+    }
+
+  };
 
 
 
@@ -218,35 +223,13 @@ export default function AdminCreateSubAdmin() {
 
       <div className="stat-card mb-6">
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
 
           <div className="space-y-1">
 
             <Label>Email Address</Label>
 
-            <Input type="email" placeholder="subadmin@company.com" value={email} onChange={e => setEmail(e.target.value)} />
-
-          </div>
-
-          <div className="space-y-1">
-
-            <Label>Assign to Company</Label>
-
-            <Select value={companyId} onValueChange={setCompanyId}>
-
-              <SelectTrigger><SelectValue placeholder="Select company" /></SelectTrigger>
-
-              <SelectContent>
-
-                {approvedCompanies.map(c => (
-
-                  <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>
-
-                ))}
-
-              </SelectContent>
-
-            </Select>
+            <Input type="email" placeholder="subadmin@ezrisk.com" value={email} onChange={e => setEmail(e.target.value)} />
 
           </div>
 
@@ -260,7 +243,7 @@ export default function AdminCreateSubAdmin() {
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
 
-            {MODULE_OPTIONS.map(mod => (
+            {OSA_MODULE_OPTIONS.map(mod => (
 
               <label key={mod.key} className="flex items-center gap-2 text-sm cursor-pointer p-2 rounded-md hover:bg-muted border">
 
@@ -336,7 +319,7 @@ export default function AdminCreateSubAdmin() {
 
             <thead>
 
-              <tr><th>Name</th><th>Email</th><th>Company</th><th>Modules</th><th>Actions</th></tr>
+              <tr><th>Name</th><th>Email</th><th>Modules</th><th>Actions</th></tr>
 
             </thead>
 
@@ -349,8 +332,6 @@ export default function AdminCreateSubAdmin() {
                   <td className="font-medium">{u.name}</td>
 
                   <td>{u.email}</td>
-
-                  <td>{u.companyId?.name || "—"}</td>
 
                   <td>
 
@@ -368,11 +349,21 @@ export default function AdminCreateSubAdmin() {
 
                   <td>
 
-                    <Button size="sm" variant="ghost" onClick={() => { setEditUser(u); setEditModules(u.assignedModules || []); }}>
+                    <div className="flex gap-1">
 
-                      <Settings className="h-4 w-4" />
+                      <Button size="sm" variant="ghost" onClick={() => { setEditUser(u); setEditModules(u.assignedModules || []); }} title="Edit Modules">
 
-                    </Button>
+                        <Settings className="h-4 w-4" />
+
+                      </Button>
+
+                      <Button size="sm" variant="ghost" onClick={() => deleteSubAdmin(u._id)} className="text-red-500 hover:text-red-700" title="Delete Sub-Admin">
+
+                        <Trash2 className="h-4 w-4" />
+
+                      </Button>
+
+                    </div>
 
                   </td>
 
@@ -400,7 +391,7 @@ export default function AdminCreateSubAdmin() {
 
           <div className="grid grid-cols-2 gap-2 py-4">
 
-            {MODULE_OPTIONS.map(mod => (
+            {OSA_MODULE_OPTIONS.map(mod => (
 
               <label key={mod.key} className="flex items-center gap-2 text-sm cursor-pointer p-2 rounded-md hover:bg-muted">
 

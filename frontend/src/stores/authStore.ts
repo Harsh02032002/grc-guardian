@@ -7,7 +7,8 @@ export interface User {
   _id: string;
   name: string;
   email: string;
-  role: "superadmin" | "subadmin" | "client";
+  role: "superadmin" | "subadmin" | "client" | "auditor" | "auditee" | "general";
+  userType: "osa" | "client";
   companyId?: { _id: string; name: string } | string;
   assignedModules: string[];
   isApproved: boolean;
@@ -96,6 +97,22 @@ export const useAuthStore = create<AuthState>()(
       },
 
       clearError: () => set({ error: null }),
+
+      refreshUser: async () => {
+        const token = get().token;
+        if (!token) return;
+        try {
+          const res = await fetch(`${API_BASE_URL}/auth/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            const user = await res.json();
+            set({ user });
+          }
+        } catch {
+          // Silent fail
+        }
+      },
       setHasHydrated: (value: boolean) => set({ hasHydrated: value }),
     }),
     {

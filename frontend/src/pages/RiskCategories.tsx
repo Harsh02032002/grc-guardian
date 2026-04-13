@@ -14,11 +14,13 @@ export default function RiskCategories() {
   const [showAdd, setShowAdd] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [submittedBy, setSubmittedBy] = useState("");
+  const [sourceComment, setSourceComment] = useState("");
 
   const handleAdd = () => {
     if (!name.trim()) { toast({ title: "Name is required", variant: "destructive" }); return; }
-    createConfig.mutate({ type: "risk_category", name: name.trim(), description }, {
-      onSuccess: () => { setShowAdd(false); setName(""); setDescription(""); },
+    createConfig.mutate({ type: "risk_category", name: name.trim(), description, metadata: { submittedBy, sourceComment } }, {
+      onSuccess: () => { setShowAdd(false); setName(""); setDescription(""); setSubmittedBy(""); setSourceComment(""); },
     });
   };
 
@@ -43,7 +45,7 @@ export default function RiskCategories() {
       ) : (
         <table className="data-table">
           <thead>
-            <tr><th>#</th><th>Category Name</th><th>Description</th><th>Actions</th></tr>
+            <tr><th>#</th><th>Category Name</th><th>Description</th><th>Submitted By</th><th>Source Comment</th><th>Actions</th></tr>
           </thead>
           <tbody>
             {categories.map((c: any, i: number) => (
@@ -51,6 +53,8 @@ export default function RiskCategories() {
                 <td>{i + 1}</td>
                 <td className="font-medium">{c.name}</td>
                 <td className="text-muted-foreground">{c.description || "-"}</td>
+                <td className="text-xs">{c.metadata?.submittedBy || "-"}</td>
+                <td className="text-xs">{c.metadata?.sourceComment || "-"}</td>
                 <td>
                   <div className="flex gap-1">
                     <button className="p-1.5 rounded hover:bg-muted"><Edit className="h-3.5 w-3.5 text-muted-foreground" /></button>
@@ -60,7 +64,7 @@ export default function RiskCategories() {
               </tr>
             ))}
             {categories.length === 0 && (
-              <tr><td colSpan={4} className="text-center text-muted-foreground py-8">No categories. Click "Add Category" to create one.</td></tr>
+              <tr><td colSpan={6} className="text-center text-muted-foreground py-8">No categories. Click "Add Category" to create one.</td></tr>
             )}
           </tbody>
         </table>
@@ -72,6 +76,8 @@ export default function RiskCategories() {
           <div className="space-y-3">
             <div className="space-y-1.5"><Label className="text-xs">Category Name *</Label><Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g., Operational" className="text-xs" /></div>
             <div className="space-y-1.5"><Label className="text-xs">Description</Label><Input value={description} onChange={e => setDescription(e.target.value)} placeholder="Brief description" className="text-xs" /></div>
+            <div className="space-y-1.5"><Label className="text-xs">Submitted By</Label><Input value={submittedBy} onChange={e => setSubmittedBy(e.target.value)} placeholder="Name of person who submitted" className="text-xs" /></div>
+            <div className="space-y-1.5"><Label className="text-xs">Source Comment</Label><Input value={sourceComment} onChange={e => setSourceComment(e.target.value)} placeholder="Information about source of risk category" className="text-xs" /></div>
           </div>
           <DialogFooter>
             <button onClick={() => setShowAdd(false)} className="px-4 py-2 rounded-md border text-sm hover:bg-muted transition">Cancel</button>

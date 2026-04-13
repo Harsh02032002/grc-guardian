@@ -14,6 +14,7 @@ export default function ConfigRiskOwner() {
   const [showAdd, setShowAdd] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [department, setDepartment] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
 
@@ -23,11 +24,11 @@ export default function ConfigRiskOwner() {
       type: "risk_owner",
       name: name.trim(),
       description,
-      metadata: { email, phone },
+      metadata: { email, phone, department },
     }, {
       onSuccess: () => {
         setShowAdd(false);
-        setName(""); setDescription(""); setEmail(""); setPhone("");
+        setName(""); setDescription(""); setDepartment(""); setEmail(""); setPhone("");
       },
     });
   };
@@ -53,7 +54,7 @@ export default function ConfigRiskOwner() {
       ) : (
         <table className="data-table">
           <thead>
-            <tr><th>#</th><th>Name</th><th>Role / Description</th><th>Email</th><th>Phone</th><th>Actions</th></tr>
+            <tr><th>#</th><th>Name</th><th>Role / Description</th><th>Department</th><th>Email</th><th>Phone</th><th>Actions</th></tr>
           </thead>
           <tbody>
             {owners.map((o: any, i: number) => (
@@ -61,6 +62,7 @@ export default function ConfigRiskOwner() {
                 <td>{i + 1}</td>
                 <td className="font-medium">{o.name}</td>
                 <td className="text-muted-foreground">{o.description}</td>
+                <td className="text-xs">{o.metadata?.department || "-"}</td>
                 <td className="text-xs">{o.metadata?.email || "-"}</td>
                 <td className="text-xs">{o.metadata?.phone || "-"}</td>
                 <td>
@@ -72,7 +74,7 @@ export default function ConfigRiskOwner() {
               </tr>
             ))}
             {owners.length === 0 && (
-              <tr><td colSpan={6} className="text-center text-muted-foreground py-8">No risk owners configured. Click "Add Risk Owner" to get started.</td></tr>
+              <tr><td colSpan={7} className="text-center text-muted-foreground py-8">No risk owners configured. Click "Add Risk Owner" to get started.</td></tr>
             )}
           </tbody>
         </table>
@@ -84,6 +86,7 @@ export default function ConfigRiskOwner() {
           <div className="space-y-3">
             <div className="space-y-1.5"><Label className="text-xs">Name *</Label><Input value={name} onChange={e => setName(e.target.value)} placeholder="Full name" className="text-xs" /></div>
             <div className="space-y-1.5"><Label className="text-xs">Role / Description</Label><Input value={description} onChange={e => setDescription(e.target.value)} placeholder="e.g., IT Manager" className="text-xs" /></div>
+            <div className="space-y-1.5"><Label className="text-xs">Department</Label><Input value={department} onChange={e => setDepartment(e.target.value)} placeholder="e.g., IT Department" className="text-xs" /></div>
             <div className="space-y-1.5"><Label className="text-xs">Email</Label><Input value={email} onChange={e => setEmail(e.target.value)} placeholder="email@company.com" className="text-xs" /></div>
             <div className="space-y-1.5"><Label className="text-xs">Phone</Label><Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+91-XXXXXXXXXX" className="text-xs" /></div>
           </div>

@@ -9,11 +9,12 @@ export default function ConfigDepartment() {
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState("");
   const [newCode, setNewCode] = useState("");
+  const [newLocation, setNewLocation] = useState("Head Office");
 
   const handleAdd = () => {
     if (!newName.trim()) return;
-    setItems([...items, { id: items.length + 1, name: newName, code: newCode }]);
-    setNewName(""); setNewCode(""); setShowAdd(false);
+    setItems([...items, { id: items.length + 1, name: newName, code: newCode, location: newLocation } as any]);
+    setNewName(""); setNewCode(""); setNewLocation("Head Office"); setShowAdd(false);
   };
 
   return (
@@ -33,6 +34,7 @@ export default function ConfigDepartment() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5"><Label>Department Name *</Label><Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="e.g., Finance" /></div>
             <div className="space-y-1.5"><Label>Department Code</Label><Input value={newCode} onChange={e => setNewCode(e.target.value)} placeholder="e.g., FIN" /></div>
+            <div className="space-y-1.5"><Label>Location</Label><Input value={newLocation} onChange={e => setNewLocation(e.target.value)} placeholder="e.g., Head Office, Branch 1" /></div>
           </div>
           <div className="flex gap-2">
             <button onClick={handleAdd} className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90">Save</button>
@@ -42,13 +44,14 @@ export default function ConfigDepartment() {
       )}
 
       <table className="data-table">
-        <thead><tr><th>#</th><th>Department Name</th><th>Code</th><th>Actions</th></tr></thead>
+        <thead><tr><th>#</th><th>Department Name</th><th>Code</th><th>Location</th><th>Actions</th></tr></thead>
         <tbody>
           {items.map((item, idx) => (
             <tr key={item.id}>
               <td className="font-mono text-xs">{idx + 1}</td>
               <td className="font-medium">{item.name}</td>
               <td><span className="status-badge status-active">{item.code}</span></td>
+              <td className="text-muted-foreground text-xs">{(item as any).location || "Head Office"}</td>
               <td>
                 <div className="flex gap-1">
                   <button className="p-1.5 rounded hover:bg-muted"><Edit className="h-3.5 w-3.5 text-muted-foreground" /></button>

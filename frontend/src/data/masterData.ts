@@ -16,23 +16,23 @@ export const masterAssetClassifications = [
 ];
 
 export const masterRetentionPeriods = [
-  { id: 1, name: "1 Year", duration: "1 year", description: "Short-term records" },
-  { id: 2, name: "3 Years", duration: "3 years", description: "Medium-term operational records" },
-  { id: 3, name: "5 Years", duration: "5 years", description: "Standard business records" },
-  { id: 4, name: "7 Years", duration: "7 years", description: "Financial and compliance records" },
-  { id: 5, name: "10 Years", duration: "10 years", description: "Legal and regulatory records" },
-  { id: 6, name: "Permanent", duration: "Permanent", description: "Records kept indefinitely" },
+  { id: 1, name: "1 Year", duration: "1 year", regulation: "", description: "Short-term records" },
+  { id: 2, name: "3 Years", duration: "3 years", regulation: "", description: "Medium-term operational records" },
+  { id: 3, name: "5 Years", duration: "5 years", regulation: "SOX", description: "Standard business records" },
+  { id: 4, name: "7 Years", duration: "7 years", regulation: "Tax Law", description: "Financial and compliance records" },
+  { id: 5, name: "10 Years", duration: "10 years", regulation: "GDPR", description: "Legal and regulatory records" },
+  { id: 6, name: "Permanent", duration: "Permanent", regulation: "Corporate Law", description: "Records kept indefinitely" },
 ];
 
 export const masterDepartments = [
-  { id: 1, name: "IT Department", code: "IT" },
-  { id: 2, name: "Human Resources", code: "HR" },
-  { id: 3, name: "Finance", code: "FIN" },
-  { id: 4, name: "Operations", code: "OPS" },
-  { id: 5, name: "Legal & Compliance", code: "LEG" },
-  { id: 6, name: "Marketing", code: "MKT" },
-  { id: 7, name: "Sales", code: "SAL" },
-  { id: 8, name: "Administration", code: "ADM" },
+  { id: 1, name: "IT Department", code: "IT", location: "Head Office" },
+  { id: 2, name: "Human Resources", code: "HR", location: "Head Office" },
+  { id: 3, name: "Finance", code: "FIN", location: "Head Office" },
+  { id: 4, name: "Operations", code: "OPS", location: "Branch 1" },
+  { id: 5, name: "Legal & Compliance", code: "LEG", location: "Head Office" },
+  { id: 6, name: "Marketing", code: "MKT", location: "Branch 2" },
+  { id: 7, name: "Sales", code: "SAL", location: "Branch 1" },
+  { id: 8, name: "Administration", code: "ADM", location: "Head Office" },
 ];
 
 export const masterAssetIdFormats = [

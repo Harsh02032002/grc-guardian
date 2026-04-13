@@ -45,6 +45,7 @@ export default function AddAsset() {
     reviewer: "",
     reviewDate: "",
     status: "Active",
+    licenseDetails: "",
   });
 
   const [c, setC] = useState(1);
@@ -139,6 +140,7 @@ export default function AddAsset() {
       reviewer: formData.reviewer,
       reviewDate: formData.reviewDate,
       status: formData.status,
+      licenseDetails: formData.licenseDetails,
     };
 
     try {

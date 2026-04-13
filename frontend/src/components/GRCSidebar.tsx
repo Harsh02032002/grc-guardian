@@ -178,6 +178,22 @@ const menuItems: MenuItem[] = [
 
   },
 
+  {
+
+    title: "User Management",
+
+    icon: Users,
+
+    module: "dashboard",
+
+    subItems: [
+
+      { title: "Manage Users", url: "/company/users" },
+
+    ],
+
+  },
+
 ];
 
 

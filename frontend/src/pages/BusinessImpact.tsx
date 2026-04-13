@@ -1,9 +1,18 @@
+import { useState } from "react";
 import { impactGuidelines } from "@/data/mockData";
+import { Plus } from "lucide-react";
 
 export default function BusinessImpact() {
+  const [showAdd, setShowAdd] = useState(false);
+
   return (
     <div className="page-container">
-      <div><h1 className="page-title">Business Impact Guidelines</h1><p className="page-subtitle">Impact classification matrix for risk assessment</p></div>
+      <div className="flex items-center justify-between">
+        <div><h1 className="page-title">Business Impact Guidelines</h1><p className="page-subtitle">Impact classification matrix for risk assessment</p></div>
+        <button onClick={() => setShowAdd(true)} className="px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition flex items-center gap-1.5">
+          <Plus className="h-4 w-4" /> Add Impact Type
+        </button>
+      </div>
       <div className="overflow-x-auto">
         <table className="data-table">
           <thead>

@@ -1,4 +1,5 @@
-import { Shield, Box, AlertTriangle, FileCheck, BarChart3, TrendingUp, TrendingDown } from "lucide-react";
+import { Shield, Box, AlertTriangle, FileCheck, BarChart3, TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
+import { useState } from "react";
 import { assets, risks, controls, treatments } from "@/data/mockData";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -17,13 +18,19 @@ const riskStatusData = [
 ];
 
 const stats = [
-  { label: "Total Assets", value: assets.length, icon: Box, trend: "+2", color: "text-primary" },
-  { label: "Active Risks", value: risks.filter(r => r.status === "Open").length, icon: AlertTriangle, trend: "-1", color: "text-destructive" },
-  { label: "Controls", value: controls.length, icon: Shield, trend: "+3", color: "text-success" },
-  { label: "Treatment Plans", value: treatments.length, icon: FileCheck, trend: "+1", color: "text-warning" },
+  { label: "Total Assets", value: assets.length, icon: Box, trend: "+2", color: "text-primary", route: "/assets" },
+  { label: "Active Risks", value: risks.filter(r => r.status === "Open").length, icon: AlertTriangle, trend: "-1", color: "text-destructive", route: "/risks" },
+  { label: "Controls", value: controls.length, icon: Shield, trend: "+3", color: "text-success", route: "/controls" },
+  { label: "Treatment Plans", value: treatments.length, icon: FileCheck, trend: "+1", color: "text-warning", route: "/treatments" },
 ];
 
 export default function Dashboard() {
+  const [selectedPanel, setSelectedPanel] = useState<string | null>(null);
+
+  const openPanelDetails = (label: string, route: string) => {
+    window.open(route, '_blank', 'width=1200,height=800');
+  };
+
   return (
     <div className="page-container">
       <div>
@@ -33,10 +40,17 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((s) => (
-          <div key={s.label} className="stat-card">
+          <div 
+            key={s.label} 
+            className="stat-card cursor-pointer hover:shadow-lg transition-all group"
+            onClick={() => openPanelDetails(s.label, s.route || '/')}
+          >
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-muted-foreground">{s.label}</span>
-              <s.icon className={`h-5 w-5 ${s.color}`} />
+              <span className="text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors">{s.label}</span>
+              <div className="flex items-center gap-2">
+                <s.icon className={`h-5 w-5 ${s.color}`} />
+                <ExternalLink className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
             </div>
             <div className="flex items-end gap-2">
               <span className="text-3xl font-bold">{s.value}</span>

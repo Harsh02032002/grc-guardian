@@ -7,29 +7,26 @@ import { useAuthStore } from "@/stores/authStore";
 import { canAccessModule } from "@/lib/access";
 
 import {
-
   LayoutDashboard,
-
   Box,
-
   AlertTriangle,
-
   Wrench,
-
   Users,
-
   LogOut,
-
   Shield,
-
   ChevronDown,
-
   ChevronRight,
-
   UserCheck,
-
   UserPlus,
-
+  Building2,
+  CheckCircle,
+  XCircle,
+  Plus,
+  Trash2,
+  Settings,
+  CreditCard,
+  BarChart3,
+  Database,
 } from "lucide-react";
 
 
@@ -52,70 +49,71 @@ interface MenuItem {
 
 
 
+// OSA Admin Menu - 5 Main Modules
 const adminMenuItems: MenuItem[] = [
-
+  // 1. System Dashboard
   { title: "Dashboard", icon: LayoutDashboard, url: "/admin", module: "dashboard" },
 
-  { title: "Assets", icon: Box, url: "/admin/assets", module: "assets" },
-
-  { title: "Risks", icon: AlertTriangle, url: "/admin/risks", module: "risks" },
-
+  // 2. Company Management
   {
-
-    title: "Configuration",
-
-    icon: Wrench,
-
-    module: "configuration",
-
+    title: "Company Management",
+    icon: Building2,
+    module: "companies",
     subItems: [
-
-      { title: "Risk Owners", url: "/admin/config/risk-owners" },
-
-      { title: "Risk Categories", url: "/admin/config/risk-categories" },
-
-      { title: "Risk Subcategories", url: "/admin/config/risk-subcategories" },
-
-      { title: "Asset Categories", url: "/admin/config/asset-categories" },
-
-      { title: "Asset Classification", url: "/admin/config/asset-classification" },
-
-      { title: "Retention Period", url: "/admin/config/retention-period" },
-
-      { title: "Department", url: "/admin/config/department" },
-
-      { title: "Asset ID Format", url: "/admin/config/asset-id-format" },
-
-      { title: "Asset Type", url: "/admin/config/asset-type" },
-
-      { title: "Location", url: "/admin/config/location" },
-
-      { title: "Business Impact", url: "/admin/config/impact" },
-
-      { title: "CIA Matrix", url: "/admin/config/cia-matrix" },
-
+      { title: "Approve Companies", url: "/admin/companies/approve" },
+      { title: "All Companies", url: "/admin/companies" },
+      { title: "Activate / Deactivate", url: "/admin/companies/status" },
     ],
-
   },
 
+  // 3. User Management (OSA + Client)
   {
-
     title: "User Management",
-
     icon: Users,
-
-    module: "dashboard", // always visible for admins
-
+    module: "users",
     subItems: [
-
-      { title: "Approve Users", url: "/admin/users/approve" },
-
-      { title: "Create Sub-Admin", url: "/admin/users/create-subadmin" },
-
+      { title: "OSA Users", url: "/admin/users/osa" },
+      { title: "Client Admins", url: "/admin/users/client-admins" },
+      { title: "Create OSA Sub-Admin", url: "/admin/users/create-subadmin" },
     ],
-
   },
 
+  // 4. Payment Management
+  {
+    title: "Payment Management",
+    icon: CreditCard,
+    module: "payments",
+    subItems: [
+      { title: "Payment Status", url: "/admin/payments/status" },
+      { title: "Approve / Verify", url: "/admin/payments" },
+      { title: "Payment History", url: "/admin/payments/history" },
+    ],
+  },
+
+  // 5. Resource Allocation
+  {
+    title: "Resource Allocation",
+    icon: Database,
+    module: "resources",
+    subItems: [
+      { title: "Set User Limits", url: "/admin/resources/user-limits" },
+      { title: "Storage Allocation", url: "/admin/resources/storage" },
+      { title: "Company Resources", url: "/admin/resources/companies" },
+    ],
+  },
+
+  // OSA Internal Modules (Sub-admin access)
+  {
+    title: "Configuration",
+    icon: Wrench,
+    module: "configuration",
+    subItems: [
+      { title: "Risk Owners", url: "/admin/config/risk-owners" },
+      { title: "Risk Categories", url: "/admin/config/risk-categories" },
+      { title: "Asset Categories", url: "/admin/config/asset-categories" },
+      { title: "CIA Matrix", url: "/admin/config/cia-matrix" },
+    ],
+  },
 ];
 
 
